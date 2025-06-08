@@ -37,19 +37,27 @@ Here's a minimal example of compiling a pattern, matching a string, and freeing 
 #include <stdio.h>
 #include "vibrex.h"
 
-int main(void) {
+int main(void)
+{
     vibrex_t *pattern = vibrex_compile("h.llo");
-    if (!pattern) {
-        fprintf(stderr, "Failed to compile pattern\n");
-        return 1;
+    if (!pattern)
+    {
+      fprintf(stderr, "Failed to compile pattern\n");
+      return 1;
     }
+
     const char *text = "hello";
-    if (vibrex_match(pattern, text)) {
-        printf("'%s' matches!\n", text);
-    } else {
-        printf("'%s' does not match.\n", text);
+    if (vibrex_match(pattern, text))
+    {
+      printf("'%s' matches!\n", text);
     }
+    else
+    {
+      printf("'%s' does not match.\n", text);
+    }
+
     vibrex_free(pattern);
+
     return 0;
 }
 ```

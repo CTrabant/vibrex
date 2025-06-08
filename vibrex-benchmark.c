@@ -5,11 +5,7 @@
  * This program benchmarks the compilation and matching performance of three
  * different regular expression engines on a variety of patterns and texts.
  *
- * To compile: cc -O2 -o vibrex-benchmark vibrex-benchmark.c vibrex.c -lpcre2-8
- *
- * On macOS with PCRE2 installed via Homebrew, you might need:
- *   cc -O2 -o vibrex-benchmark vibrex-benchmark.c vibrex.c -I/opt/homebrew/include
- *   -L/opt/homebrew/lib -lpcre2-8
+ * To compile: cc -O2 `pcre2-config --cflags` -o vibrex-benchmark vibrex-benchmark.c vibrex.c `pcre2-config --libs8`
  *********************************************************************************/
 
 #include <stdio.h>

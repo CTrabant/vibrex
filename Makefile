@@ -4,8 +4,9 @@ LIB_TARGET = libvibrex.a
 TEST_TARGET = vibrex-test
 COMPARE_TARGET = vibrex-compare
 CLI_TARGET = vibrex-cli
+BENCHMARK_TARGET = vibrex-benchmark
 
-.PHONY: all clean test compare cli
+.PHONY: all clean test compare cli benchmark
 
 all: $(LIB_TARGET) $(CLI_TARGET)
 
@@ -31,5 +32,11 @@ vibrex.o: vibrex.c vibrex.h
 compare: vibrex-compare.c $(LIB_TARGET) vibrex.h
 	$(CC) $(CFLAGS) -o $(COMPARE_TARGET) vibrex-compare.c $(LIB_TARGET)
 
+benchmark: $(BENCHMARK_TARGET)
+
+$(BENCHMARK_TARGET): vibrex-benchmark.c vibrex.c vibrex.h
+	$(CC) $(CFLAGS) `pcre2-config --cflags` -o $(BENCHMARK_TARGET) vibrex-benchmark.c vibrex.c `pcre2-config --libs8`
+
 clean:
-	rm -rf $(TEST_TARGET) $(COMPARE_TARGET) $(LIB_TARGET) $(CLI_TARGET) vibrex.o vibrex-test.o vibrex-compare.o vibrex-cli.o *.dSYM
+	rm -f $(LIB_TARGET) $(TEST_TARGET) $(COMPARE_TARGET) $(CLI_TARGET) $(BENCHMARK_TARGET)
+	rm -rf *.dSYM vibrex.o vibrex-test.o vibrex-compare.o vibrex-cli.o *.dSYM

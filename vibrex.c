@@ -49,6 +49,8 @@
  * SPDX-License-Identifier: CC0-1.0
  *
  * Pushed into the world here: https://github.com/CTrabant/vibrex
+ *
+ * Version: 0.0.2
  *********************************************************************************/
 
 #include <stdbool.h>
@@ -1153,6 +1155,32 @@ analyze_alternations (vibrex_t *pattern, int depth)
 
   free (pattern_copy);
 
+  /* Check if all alternatives are anchored at the start */
+  bool all_are_start_anchored = pattern->alt_count > 0;
+  if (all_are_start_anchored)
+  {
+    for (size_t i = 0; i < pattern->alt_count; i++)
+    {
+      if (pattern->alternatives[i].pattern_len == 0 || pattern->alternatives[i].pattern_text[0] != '^')
+      {
+        all_are_start_anchored = false;
+        break;
+      }
+    }
+  }
+
+  if (all_are_start_anchored)
+  {
+    pattern->anchored_start = true;
+    for (size_t i = 0; i < pattern->alt_count; i++)
+    {
+      char *p_text = pattern->alternatives[i].pattern_text;
+      size_t p_len = pattern->alternatives[i].pattern_len;
+      memmove (p_text, p_text + 1, p_len); /* p_len is strlen, so moves null term */
+      pattern->alternatives[i].pattern_len--;
+    }
+  }
+
   /* Try character dispatch optimization first */
   if (build_char_dispatch (pattern))
   {
@@ -1566,12 +1594,61 @@ match_alternations_optimized (const vibrex_t *pattern, const char *text)
   /* Fast character dispatch for single character alternatives */
   if (pattern->char_dispatch.is_single_char_dispatch)
   {
+    if (pattern->anchored_start)
+    {
+      return *text && pattern->char_dispatch.char_table[(unsigned char)*text];
+    }
     /* Check if text contains any of the alternative characters */
     for (const char *p = text; *p; p++)
     {
       if (pattern->char_dispatch.char_table[(unsigned char)*p])
       {
         return true;
+      }
+    }
+    return false;
+  }
+
+  /* Handle globally anchored alternations */
+  if (pattern->anchored_start)
+  {
+    const char *match_text = text;
+    if (pattern->common_prefix_len > 0)
+    {
+      if (strncmp (text, pattern->common_prefix, pattern->common_prefix_len) != 0)
+      {
+        return false;
+      }
+      match_text += pattern->common_prefix_len;
+    }
+
+    for (size_t i = 0; i < pattern->alt_count; i++)
+    {
+      if (pattern->alternatives[i].compiled)
+      {
+        const vibrex_t *alt = pattern->alternatives[i].compiled;
+        const char *middle_match_end = match_here (alt->code, match_text, 0);
+
+        if (middle_match_end)
+        {
+          /* Middle part matched, now try suffix */
+          if (pattern->compiled_suffix)
+          {
+            if (match_here (pattern->compiled_suffix->code, middle_match_end, 0))
+            {
+              return true;
+            }
+          }
+          else if (alt->anchored_end)
+          {
+            if (*middle_match_end == '\0')
+              return true;
+          }
+          else
+          {
+            return true;
+          }
+        }
       }
     }
     return false;

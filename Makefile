@@ -2,10 +2,9 @@ CFLAGS = -std=c11 -Wall -Wextra -O2 -g
 
 LIB_TARGET = libvibrex.a
 TEST_TARGET = test_vibrex
-DEMO_TARGET = demo_vibrex
 COMPARE_TARGET = compare_vibrex
 
-.PHONY: all clean test demo compare
+.PHONY: all clean test compare
 
 all: $(LIB_TARGET)
 
@@ -23,11 +22,8 @@ test: $(TEST_TARGET)
 vibrex.o: vibrex.c vibrex.h
 	$(CC) $(CFLAGS) -c vibrex.c
 
-demo: vibrex.c demo_vibrex.c vibrex.h
-	$(CC) $(CFLAGS) -o $(DEMO_TARGET) vibrex.c demo_vibrex.c
-
 compare: compare_vibrex.c $(LIB_TARGET) vibrex.h
 	$(CC) $(CFLAGS) -o $(COMPARE_TARGET) compare_vibrex.c $(LIB_TARGET)
 
 clean:
-	rm -rf $(TEST_TARGET) $(DEMO_TARGET) $(COMPARE_TARGET) $(LIB_TARGET) vibrex.o test_vibrex.o demo_vibrex.o compare_vibrex.o *.dSYM
+	rm -rf $(TEST_TARGET) $(COMPARE_TARGET) $(LIB_TARGET) vibrex.o test_vibrex.o compare_vibrex.o *.dSYM

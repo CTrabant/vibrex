@@ -151,12 +151,12 @@ benchmark_pcre2 (const char *name, const char *pattern, const char *text, int it
 }
 
 /**
- * @brief Benchmark the POSIX (libc) regex engine.
+ * @brief Benchmark the system (libc) regex engine.
  */
 static bool
-benchmark_posix (const char *name, const char *pattern, const char *text, int iterations, benchmark_result *result)
+benchmark_system (const char *name, const char *pattern, const char *text, int iterations, benchmark_result *result)
 {
-  printf ("--- POSIX (libc): %s ---\n", name);
+  printf ("--- system (libc): %s ---\n", name);
   double start_time, end_time, compile_time, match_time;
   regex_t regex;
   int reti;
@@ -170,7 +170,7 @@ benchmark_posix (const char *name, const char *pattern, const char *text, int it
   {
     char msgbuf[100];
     regerror (reti, &regex, msgbuf, sizeof (msgbuf));
-    fprintf (stderr, "POSIX regex compilation failed: %s\n", msgbuf);
+    fprintf (stderr, "system regex compilation failed: %s\n", msgbuf);
     result->compile_time = -1;
     result->match_time   = -1;
     return false;
@@ -243,9 +243,18 @@ int
 main (int argc, char *argv[])
 {
   int iterations = 10000;
-  if (argc > 1)
+  bool run_system_tests = true;
+
+  for (int i = 1; i < argc; i++)
   {
-    iterations = atoi (argv[1]);
+    if (strcmp (argv[i], "--no-system") == 0)
+    {
+      run_system_tests = false;
+    }
+    else if (atoi (argv[i]) > 0)
+    {
+      iterations = atoi (argv[i]);
+    }
   }
 
   benchmark_case tests[] = {
@@ -266,7 +275,7 @@ main (int argc, char *argv[])
 
   benchmark_result vibrex_results[num_tests];
   benchmark_result pcre2_results[num_tests];
-  benchmark_result posix_results[num_tests];
+  benchmark_result system_results[num_tests];
 
   printf ("Running benchmarks with %d iterations per test.\n", iterations);
 
@@ -280,8 +289,11 @@ main (int argc, char *argv[])
     benchmark_vibrex (tests[i].name, tests[i].pattern, tests[i].text, iterations, &vibrex_results[i]);
     printf ("\n");
     benchmark_pcre2 (tests[i].name, tests[i].pattern, tests[i].text, iterations, &pcre2_results[i]);
-    printf ("\n");
-    benchmark_posix (tests[i].name, tests[i].pattern, tests[i].text, iterations, &posix_results[i]);
+    if (run_system_tests)
+    {
+      printf ("\n");
+      benchmark_system (tests[i].name, tests[i].pattern, tests[i].text, iterations, &system_results[i]);
+    }
   }
 
   printf ("\n======================================================\n");
@@ -290,7 +302,7 @@ main (int argc, char *argv[])
   // --- Summary ---
   double vibrex_total_compile = 0, vibrex_total_match = 0;
   double pcre2_total_compile = 0, pcre2_total_match = 0;
-  double posix_total_compile = 0, posix_total_match = 0;
+  double system_total_compile = 0, system_total_match = 0;
 
   for (int i = 0; i < num_tests; i++)
   {
@@ -304,41 +316,50 @@ main (int argc, char *argv[])
     if (pcre2_results[i].match_time >= 0)
       pcre2_total_match += pcre2_results[i].match_time;
 
-    if (posix_results[i].compile_time >= 0)
-      posix_total_compile += posix_results[i].compile_time;
-    if (posix_results[i].match_time >= 0)
-      posix_total_match += posix_results[i].match_time;
+    if (run_system_tests)
+    {
+      if (system_results[i].compile_time >= 0)
+        system_total_compile += system_results[i].compile_time;
+      if (system_results[i].match_time >= 0)
+        system_total_match += system_results[i].match_time;
+    }
   }
 
   double vibrex_total = vibrex_total_compile + vibrex_total_match;
   double pcre2_total  = pcre2_total_compile + pcre2_total_match;
-  double posix_total  = posix_total_compile + posix_total_match;
+  double system_total = system_total_compile + system_total_match;
 
   printf ("\n======================================================\n");
-  printf ("Benchmark Summary (Total Times)\n");
+  printf ("Benchmark Summary (Total Times for %d iterations per test)\n", iterations);
   printf ("------------------------------------------------------\n");
   printf ("%-10s | %-15s | %-15s | %-15s\n", "Engine", "Compile Time (s)", "Match Time (s)", "Total Time (s)");
   printf ("-----------|-----------------|-----------------|-----------------\n");
   printf ("%-10s | %-15.6f | %-15.6f | %-15.6f\n", "Vibrex", vibrex_total_compile, vibrex_total_match, vibrex_total);
   printf ("%-10s | %-15.6f | %-15.6f | %-15.6f\n", "PCRE2", pcre2_total_compile, pcre2_total_match, pcre2_total);
-  printf ("%-10s | %-15.6f | %-15.6f | %-15.6f\n", "POSIX", posix_total_compile, posix_total_match, posix_total);
+  if (run_system_tests)
+  {
+    printf ("%-10s | %-15.6f | %-15.6f | %-15.6f\n", "system", system_total_compile, system_total_match, system_total);
+  }
 
-  printf ("\nRelative Performance (higher is better, POSIX = 1.00x)\n");
-  printf ("------------------------------------------------------\n");
-  printf ("%-10s | %-15s | %-15s | %-15s\n", "Engine", "Compile Speed", "Match Speed", "Overall Speed");
-  printf ("-----------|-----------------|-----------------|-----------------\n");
+  if (run_system_tests)
+  {
+    printf ("\nRelative Performance (higher is better, system = 1.00x)\n");
+    printf ("------------------------------------------------------\n");
+    printf ("%-10s | %-15s | %-15s | %-15s\n", "Engine", "Compile Speed", "Match Speed", "Overall Speed");
+    printf ("-----------|-----------------|-----------------|-----------------\n");
 
-  if (vibrex_total_compile > 0)
-    printf ("%-10s | %-15.2fx | %-15.2fx | %-15.2fx\n", "Vibrex", posix_total_compile / vibrex_total_compile, posix_total_match / vibrex_total_match, posix_total / vibrex_total);
-  else
-    printf ("%-10s | %-15s | %-15.2fx | %-15.2fx\n", "Vibrex", "N/A", posix_total_match / vibrex_total_match, posix_total / vibrex_total);
+    if (vibrex_total_compile > 0)
+      printf ("%-10s | %-15.2fx | %-15.2fx | %-15.2fx\n", "Vibrex", system_total_compile / vibrex_total_compile, system_total_match / vibrex_total_match, system_total / vibrex_total);
+    else
+      printf ("%-10s | %-15s | %-15.2fx | %-15.2fx\n", "Vibrex", "N/A", system_total_match / vibrex_total_match, system_total / vibrex_total);
 
-  if (pcre2_total_compile > 0)
-    printf ("%-10s | %-15.2fx | %-15.2fx | %-15.2fx\n", "PCRE2", posix_total_compile / pcre2_total_compile, posix_total_match / pcre2_total_match, posix_total / pcre2_total);
-  else
-    printf ("%-10s | %-15s | %-15.2fx | %-15.2fx\n", "PCRE2", "N/A", posix_total_match / pcre2_total_match, posix_total / pcre2_total);
+    if (pcre2_total_compile > 0)
+      printf ("%-10s | %-15.2fx | %-15.2fx | %-15.2fx\n", "PCRE2", system_total_compile / pcre2_total_compile, system_total_match / pcre2_total_match, system_total / pcre2_total);
+    else
+      printf ("%-10s | %-15s | %-15.2fx | %-15.2fx\n", "PCRE2", "N/A", system_total_match / pcre2_total_match, system_total / pcre2_total);
 
-  printf ("%-10s | %-15.2fx | %-15.2fx | %-15.2fx\n", "POSIX", 1.00, 1.00, 1.00);
+    printf ("%-10s | %-15.2fx | %-15.2fx | %-15.2fx\n", "system", 1.00, 1.00, 1.00);
+  }
   printf ("======================================================\n");
 
   return 0;

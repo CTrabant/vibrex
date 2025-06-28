@@ -28,7 +28,7 @@ typedef struct vibrex_pattern vibrex_t;
  * @return A pointer to a compiled vibex_t object on success,
  * or NULL if the pattern has a syntax error or on memory allocation failure.
  *********************************************************************************/
-vibrex_t* vibrex_compile(const char* pattern);
+extern vibrex_t* vibrex_compile(const char* pattern);
 
 /********************************************************************************
  * @brief Match a compiled pattern against a string
@@ -37,13 +37,13 @@ vibrex_t* vibrex_compile(const char* pattern);
  * @param text The text to match against
  * @return true if match found, false otherwise
  *********************************************************************************/
-bool vibrex_match(const vibrex_t* compiled_pattern, const char* text);
+extern bool vibrex_match(const vibrex_t* compiled_pattern, const char* text);
 
 /********************************************************************************
  * @brief Free a compiled pattern
  *
  * @param compiled_pattern The pattern to free
  *********************************************************************************/
-void vibrex_free(vibrex_t* compiled_pattern);
+extern void vibrex_free(vibrex_t* compiled_pattern);
 
 #endif /* VIBREX_H */

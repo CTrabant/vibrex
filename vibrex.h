@@ -25,16 +25,20 @@ typedef struct vibrex_pattern vibrex_t;
  * @brief Compiles a regular expression pattern
  *
  * @param pattern The null-terminated regular expression string.
+ * @param error_message If not NULL, will be set to a pointer to a
+ * description of the error on failure.
+ *
  * @return A pointer to a compiled vibex_t object on success,
  * or NULL if the pattern has a syntax error or on memory allocation failure.
  *********************************************************************************/
-extern vibrex_t* vibrex_compile(const char* pattern);
+extern vibrex_t* vibrex_compile(const char* pattern, const char **error_message);
 
 /********************************************************************************
  * @brief Match a compiled pattern against a string
  *
  * @param compiled_pattern The compiled regex pattern
  * @param text The text to match against
+ *
  * @return true if match found, false otherwise
  *********************************************************************************/
 extern bool vibrex_match(const vibrex_t* compiled_pattern, const char* text);

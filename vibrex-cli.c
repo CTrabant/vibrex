@@ -29,11 +29,12 @@ main (int argc, char *argv[])
 
   const char *pattern_str = argv[1];
   const char *text        = argv[2];
+  const char *error_message = NULL;
 
-  vibrex_t *compiled_pattern = vibrex_compile (pattern_str);
+  vibrex_t *compiled_pattern = vibrex_compile (pattern_str, &error_message);
   if (!compiled_pattern)
   {
-    fprintf (stderr, "Error compiling pattern: %s\n", pattern_str);
+    fprintf (stderr, "Error compiling pattern: %s\n", error_message ? error_message : pattern_str);
     return 1;
   }
 

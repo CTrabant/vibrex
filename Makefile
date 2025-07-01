@@ -33,6 +33,7 @@ compare: vibrex-compare.c $(LIB_TARGET) vibrex.h
 	$(CC) $(CFLAGS) -o $(COMPARE_TARGET) vibrex-compare.c $(LIB_TARGET)
 
 benchmark: $(BENCHMARK_TARGET)
+	./$(BENCHMARK_TARGET)
 
 $(BENCHMARK_TARGET): vibrex-benchmark.c vibrex.c vibrex.h
 	$(CC) $(CFLAGS) `pcre2-config --cflags` -o $(BENCHMARK_TARGET) vibrex-benchmark.c vibrex.c `pcre2-config --libs8`

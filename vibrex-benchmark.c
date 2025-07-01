@@ -9,11 +9,11 @@
  * cc -O2 `pcre2-config --cflags` -o vibrex-benchmark vibrex-benchmark.c vibrex.c `pcre2-config --libs8`
  *********************************************************************************/
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <stdbool.h>
 
 #include "vibrex.h"
 #include <regex.h>
@@ -41,6 +41,7 @@ typedef struct
 {
   double compile_time;
   double match_time;
+  int match_count;
 } benchmark_result;
 
 /**
@@ -51,24 +52,26 @@ benchmark_vibrex (const char *name, const char *pattern, const char *text, int i
 {
   printf ("--- Vibrex: %s ---\n", name);
   double start_time, end_time, compile_time, match_time;
+  const char *error_message = NULL;
 
-  start_time     = get_time_s ();
-  vibrex_t *rex = vibrex_compile (pattern);
-  end_time       = get_time_s ();
-  compile_time   = end_time - start_time;
+  start_time    = get_time_s ();
+  vibrex_t *rex = vibrex_compile (pattern, &error_message);
+  end_time      = get_time_s ();
+  compile_time  = end_time - start_time;
 
   if (!rex)
   {
-    printf ("Vibrex compilation failed.\n");
+    printf ("Vibrex compilation failed: %s\n", error_message ? error_message : "Unknown error");
     result->compile_time = -1;
     result->match_time   = -1;
+    result->match_count  = -1;
     return false;
   }
 
   /* Warm-up run to load caches, etc. */
   (void)vibrex_match (rex, text);
 
-  start_time = get_time_s ();
+  start_time      = get_time_s ();
   int match_count = 0;
   for (int i = 0; i < iterations; i++)
   {
@@ -87,6 +90,7 @@ benchmark_vibrex (const char *name, const char *pattern, const char *text, int i
 
   result->compile_time = compile_time;
   result->match_time   = match_time;
+  result->match_count  = match_count;
 
   vibrex_free (rex);
   return true;
@@ -104,9 +108,9 @@ benchmark_pcre2 (const char *name, const char *pattern, const char *text, int it
   int errorcode;
   PCRE2_SIZE erroroffset;
 
-  start_time = get_time_s ();
-  re         = pcre2_compile ((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED, 0, &errorcode, &erroroffset, NULL);
-  end_time   = get_time_s ();
+  start_time   = get_time_s ();
+  re           = pcre2_compile ((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED, 0, &errorcode, &erroroffset, NULL);
+  end_time     = get_time_s ();
   compile_time = end_time - start_time;
 
   if (re == NULL)
@@ -116,6 +120,7 @@ benchmark_pcre2 (const char *name, const char *pattern, const char *text, int it
     printf ("PCRE2 compilation failed at offset %d: %s\n", (int)erroroffset, buffer);
     result->compile_time = -1;
     result->match_time   = -1;
+    result->match_count  = -1;
     return false;
   }
 
@@ -124,7 +129,7 @@ benchmark_pcre2 (const char *name, const char *pattern, const char *text, int it
   /* Warm-up run */
   (void)pcre2_match (re, (PCRE2_SPTR)text, strlen (text), 0, 0, match_data, NULL);
 
-  start_time = get_time_s ();
+  start_time      = get_time_s ();
   int match_count = 0;
   for (int i = 0; i < iterations; i++)
   {
@@ -144,6 +149,7 @@ benchmark_pcre2 (const char *name, const char *pattern, const char *text, int it
 
   result->compile_time = compile_time;
   result->match_time   = match_time;
+  result->match_count  = match_count;
 
   pcre2_match_data_free (match_data);
   pcre2_code_free (re);
@@ -161,9 +167,9 @@ benchmark_system (const char *name, const char *pattern, const char *text, int i
   regex_t regex;
   int reti;
 
-  start_time = get_time_s ();
-  reti       = regcomp (&regex, pattern, REG_EXTENDED | REG_NOSUB);
-  end_time   = get_time_s ();
+  start_time   = get_time_s ();
+  reti         = regcomp (&regex, pattern, REG_EXTENDED | REG_NOSUB);
+  end_time     = get_time_s ();
   compile_time = end_time - start_time;
 
   if (reti)
@@ -173,13 +179,14 @@ benchmark_system (const char *name, const char *pattern, const char *text, int i
     fprintf (stderr, "system regex compilation failed: %s\n", msgbuf);
     result->compile_time = -1;
     result->match_time   = -1;
+    result->match_count  = -1;
     return false;
   }
 
   /* Warm-up run */
   (void)regexec (&regex, text, 0, NULL, 0);
 
-  start_time = get_time_s ();
+  start_time      = get_time_s ();
   int match_count = 0;
   for (int i = 0; i < iterations; i++)
   {
@@ -198,9 +205,22 @@ benchmark_system (const char *name, const char *pattern, const char *text, int i
 
   result->compile_time = compile_time;
   result->match_time   = match_time;
+  result->match_count  = match_count;
 
   regfree (&regex);
   return true;
+}
+
+static void
+print_usage (const char *prog_name)
+{
+  printf ("Usage: %s [options] [iterations]\n\n", prog_name);
+  printf ("A performance benchmark for vibrex, comparing it to PCRE2 and the system regex library.\n\n");
+  printf ("Options:\n");
+  printf ("  --no-system    Do not run benchmarks against the system (libc) regex library.\n");
+  printf ("  -h, --help     Display this help message and exit.\n\n");
+  printf ("Arguments:\n");
+  printf ("  iterations     Number of matching iterations for each test. Defaults to 100000.\n");
 }
 
 // --- Test Cases ---
@@ -214,35 +234,36 @@ typedef struct
 /* A long string of text for searching */
 static const char *long_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. The quick brown fox jumps over the lazy dog.";
 
-/* Special case: many alternations, all start/end anchored and containing '.*' */
+/* Special case: many alternations, all start anchored and some containing '.*' */
 static const char *many_alts_pattern =
-    "^The.*jumps over the lazy dog.$|"
-    "^Lorem.*laborum.$|"
-    "^Duis.*pariatur.$|"
-    "^acme.*corp.$|"
-    "^foo.*bar$|"
-    "^widgets.*inc$|"
-    "^alpha.*beta$|"
-    "^gamma.*delta$|"
-    "^epsilon.*zeta$|"
-    "^eta.*theta$|"
-    "^iota.*kappa$|"
-    "^lambda.*mu$|"
-    "^nu.*xi$|"
-    "^omicron.*pi$|"
-    "^rho.*sigma$|"
-    "^tau.*upsilon$|"
-    "^phi.*chi$|"
-    "^psi.*omega$";
+      "^FDSN:NET_STA_LOC_L_H_N/MSEED3?|"
+      "^FDSN:NET_STA_LOC_L_H_E/MSEED3?|"
+      "^FDSN:NET_STA_LOC_L_H_Z/MSEED3?|"
+      "^FDSN:XY_STA_10_B_H_.*/MSEED3?|"
+      "^FDSN:YY_ST1_.*_.*_.*_Z/MSEED3?|"
+      "^FDSN:YY_ST2_.*_.*_.*_Z/MSEED3?|"
+      "^FDSN:YY_ST3_.*_.*_.*_Z/MSEED3?|"
+      "^FDSN:NET_ALL_.*/MSEED3?|"
+      "^FDSN:NET_CHAN_00_[HBL]_H_[ENZ]/MSEED3?|"
+      "^FDSN:NET_STA1__.*_.*_Z/MSEED3?|"
+      "^FDSN:NET_STA2__.*_.*_Z/MSEED3?|"
+      "^FDSN:NET_STA3__.*_.*_Z/MSEED3?";
 
-static const char *many_alts_text_first   = "The quick brown fox jumps over the lazy dog.";
-static const char *many_alts_text_last    = "psi and some other text omega";
+static const char *many_alts_text_first   = "FDSN:NET_STA_LOC_L_H_N/MSEED";
+static const char *many_alts_text_last    = "FDSN:NET_STA3__C_H_A/MSEED3";
 static const char *many_alts_text_nomatch = "The quick brown fox jumps over the lazy cat.";
+
+/* Additional test texts */
+static const char *numeric_text = "12345 67890 abc123def 456ghi789 000111222333444555666777888999";
+static const char *mixed_case_text = "HelloWorld FDSN:TestStation_01_BHZ ThisIsATest";
+static const char *special_chars_text = "test@example.com http://www.test.org/path?param=value 192.168.1.1";
+static const char *repeated_pattern_text = "aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeee";
+static const char *very_long_text = "This is a very long string that contains many words and should test the performance of regex engines when dealing with longer input texts. It contains various patterns including numbers like 12345, special characters like @#$%, and repeating sections like abcdefgh abcdefgh abcdefgh. The purpose is to see how well different regex engines handle longer input when searching for patterns that may or may not exist within the text.";
 
 int
 main (int argc, char *argv[])
 {
-  int iterations = 10000;
+  int iterations        = 100000;
   bool run_system_tests = true;
 
   for (int i = 1; i < argc; i++)
@@ -251,6 +272,11 @@ main (int argc, char *argv[])
     {
       run_system_tests = false;
     }
+    else if (strcmp (argv[i], "-h") == 0 || strcmp (argv[i], "--help") == 0)
+    {
+      print_usage (argv[0]);
+      return 0;
+    }
     else if (atoi (argv[i]) > 0)
     {
       iterations = atoi (argv[i]);
@@ -258,14 +284,45 @@ main (int argc, char *argv[])
   }
 
   benchmark_case tests[] = {
+      // Basic literal matching
       {"Simple literal match", "brown", long_text},
       {"Simple literal no match", "blue", long_text},
+
+      // Quantifiers and wildcards
       {"Dot star", "quis.*laboris", long_text},
-      {"Alternation match", "fox|dog|cat", long_text},
-      {"Alternation no match", "bird|fish|cow", long_text},
+      {"Greedy plus quantifier", "a+", repeated_pattern_text},
+      {"Optional quantifier", "colou?r", "The color and colour are both valid"},
+
+      // Character classes
       {"Character class", "[a-z]+", "abcdefghijklmnopqrstuvwxyz"},
+      {"Negated character class", "[^0-9]+", numeric_text},
+      {"Complex character class", "[a-zA-Z0-9_.-]+", special_chars_text},
+
+      // Anchoring
       {"Anchored start", "^Lorem", long_text},
       {"Anchored end", "dog.$", long_text},
+      {"Both anchors", "^This.*text.$", very_long_text},
+
+            // Alternations
+      {"Alternation match", "fox|dog|cat", long_text},
+      {"Alternation no match", "bird|fish|cow", long_text},
+      {"Nested alternation", "(cat|dog)|(bird|fish)", "I saw a cat today"},
+
+      // Performance stress tests
+      {"End of long text match", "text\\.$", very_long_text},
+      {"Multiple matches in long text", "a", very_long_text},
+
+      // Real-world patterns
+      {"Email pattern", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]+", special_chars_text},
+      {"URL pattern", "https?://[a-zA-Z0-9.-]+", special_chars_text},
+
+      // Edge cases
+      {"Multiple consecutive wildcards", "a.*b.*c", "axbxc and axxxbxxxcxxx"},
+      {"Escaped special chars", "\\[\\]\\(\\)\\{\\}\\*\\+\\?", "[](){}*+?"},
+      {"Long literal", "abcdefghijklmnopqrstuvwxyz", "The alphabet: abcdefghijklmnopqrstuvwxyz is here"},
+
+      // FDSN benchmark tests
+      {"FDSN station code", "FDSN:[A-Z0-9]+_[A-Z0-9]+_[A-Z0-9]*_[A-Z0-9]+_[A-Z]+_[A-Z]/MSEED3?", mixed_case_text},
       {"Many alts, first match", many_alts_pattern, many_alts_text_first},
       {"Many alts, last match", many_alts_pattern, many_alts_text_last},
       {"Many alts, no match", many_alts_pattern, many_alts_text_nomatch},
@@ -293,6 +350,43 @@ main (int argc, char *argv[])
     {
       printf ("\n");
       benchmark_system (tests[i].name, tests[i].pattern, tests[i].text, iterations, &system_results[i]);
+    }
+
+    // Check if match counts differ between engines
+    bool match_count_error = false;
+    if (vibrex_results[i].match_count >= 0 && pcre2_results[i].match_count >= 0)
+    {
+      if (vibrex_results[i].match_count != pcre2_results[i].match_count)
+      {
+        printf ("\nERROR: Match count mismatch between Vibrex (%d) and PCRE2 (%d)!\n",
+                vibrex_results[i].match_count, pcre2_results[i].match_count);
+        match_count_error = true;
+      }
+    }
+    if (run_system_tests && vibrex_results[i].match_count >= 0 && system_results[i].match_count >= 0)
+    {
+      if (vibrex_results[i].match_count != system_results[i].match_count)
+      {
+        printf ("\nERROR: Match count mismatch between Vibrex (%d) and system (%d)!\n",
+                vibrex_results[i].match_count, system_results[i].match_count);
+        match_count_error = true;
+      }
+    }
+    if (run_system_tests && pcre2_results[i].match_count >= 0 && system_results[i].match_count >= 0)
+    {
+      if (pcre2_results[i].match_count != system_results[i].match_count)
+      {
+        printf ("\nERROR: Match count mismatch between PCRE2 (%d) and system (%d)!\n",
+                pcre2_results[i].match_count, system_results[i].match_count);
+        match_count_error = true;
+      }
+    }
+
+    if (match_count_error)
+    {
+      printf ("BENCHMARK FAILED: Engines produced different match counts for test '%s'\n", tests[i].name);
+      printf ("This indicates a correctness issue with one or more regex engines.\n");
+      return 1;
     }
   }
 

@@ -236,29 +236,29 @@ static const char *long_text = "Lorem ipsum dolor sit amet, consectetur adipisci
 
 /* Special case: many alternations, all start anchored and some containing '.*' */
 static const char *many_alts_pattern =
-      "^FDSN:NET_STA_LOC_L_H_N/MSEED3?|"
-      "^FDSN:NET_STA_LOC_L_H_E/MSEED3?|"
-      "^FDSN:NET_STA_LOC_L_H_Z/MSEED3?|"
-      "^FDSN:XY_STA_10_B_H_.*/MSEED3?|"
-      "^FDSN:YY_ST1_.*_.*_.*_Z/MSEED3?|"
-      "^FDSN:YY_ST2_.*_.*_.*_Z/MSEED3?|"
-      "^FDSN:YY_ST3_.*_.*_.*_Z/MSEED3?|"
-      "^FDSN:NET_ALL_.*/MSEED3?|"
-      "^FDSN:NET_CHAN_00_[HBL]_H_[ENZ]/MSEED3?|"
-      "^FDSN:NET_STA1__.*_.*_Z/MSEED3?|"
-      "^FDSN:NET_STA2__.*_.*_Z/MSEED3?|"
-      "^FDSN:NET_STA3__.*_.*_Z/MSEED3?";
+    "^FDSN:NET_STA_LOC_L_H_N/MSEED3?|"
+    "^FDSN:NET_STA_LOC_L_H_E/MSEED3?|"
+    "^FDSN:NET_STA_LOC_L_H_Z/MSEED3?|"
+    "^FDSN:XY_STA_10_B_H_.*/MSEED3?|"
+    "^FDSN:YY_ST1_.*_.*_.*_Z/MSEED3?|"
+    "^FDSN:YY_ST2_.*_.*_.*_Z/MSEED3?|"
+    "^FDSN:YY_ST3_.*_.*_.*_Z/MSEED3?|"
+    "^FDSN:NET_ALL_.*/MSEED3?|"
+    "^FDSN:NET_CHAN_00_[HBL]_H_[ENZ]/MSEED3?|"
+    "^FDSN:NET_STA1__.*_.*_Z/MSEED3?|"
+    "^FDSN:NET_STA2__.*_.*_Z/MSEED3?|"
+    "^FDSN:NET_STA3__.*_.*_Z/MSEED3?";
 
 static const char *many_alts_text_first   = "FDSN:NET_STA_LOC_L_H_N/MSEED";
 static const char *many_alts_text_last    = "FDSN:NET_STA3__C_H_A/MSEED3";
 static const char *many_alts_text_nomatch = "The quick brown fox jumps over the lazy cat.";
 
 /* Additional test texts */
-static const char *numeric_text = "12345 67890 abc123def 456ghi789 000111222333444555666777888999";
-static const char *mixed_case_text = "HelloWorld FDSN:TestStation_01_BHZ ThisIsATest";
-static const char *special_chars_text = "test@example.com http://www.test.org/path?param=value 192.168.1.1";
+static const char *numeric_text          = "12345 67890 abc123def 456ghi789 000111222333444555666777888999";
+static const char *mixed_case_text       = "HelloWorld FDSN:TestStation_01_BHZ ThisIsATest";
+static const char *special_chars_text    = "test@example.com http://www.test.org/path?param=value 192.168.1.1";
 static const char *repeated_pattern_text = "aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeee";
-static const char *very_long_text = "This is a very long string that contains many words and should test the performance of regex engines when dealing with longer input texts. It contains various patterns including numbers like 12345, special characters like @#$%, and repeating sections like abcdefgh abcdefgh abcdefgh. The purpose is to see how well different regex engines handle longer input when searching for patterns that may or may not exist within the text.";
+static const char *very_long_text        = "This is a very long string that contains many words and should test the performance of regex engines when dealing with longer input texts. It contains various patterns including numbers like 12345, special characters like @#$%, and repeating sections like abcdefgh abcdefgh abcdefgh. The purpose is to see how well different regex engines handle longer input when searching for patterns that may or may not exist within the text.";
 
 int
 main (int argc, char *argv[])
@@ -303,7 +303,7 @@ main (int argc, char *argv[])
       {"Anchored end", "dog.$", long_text},
       {"Both anchors", "^This.*text.$", very_long_text},
 
-            // Alternations
+      // Alternations
       {"Alternation match", "fox|dog|cat", long_text},
       {"Alternation no match", "bird|fish|cow", long_text},
       {"Nested alternation", "(cat|dog)|(bird|fish)", "I saw a cat today"},

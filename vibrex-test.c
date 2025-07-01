@@ -21,53 +21,68 @@
 #define TEST_CELEBRATION "🎉"
 
 // Helper function to create a test pattern and verify it compiles
-static vibrex_t* compile_and_verify(const char* pattern, bool should_succeed) {
-    vibrex_t *compiled = vibrex_compile(pattern, NULL);
-    if (should_succeed) {
-        assert(compiled != NULL);
-    } else {
-        assert(compiled == NULL);
-    }
-    return compiled;
+static vibrex_t *
+compile_and_verify (const char *pattern, bool should_succeed)
+{
+  vibrex_t *compiled = vibrex_compile (pattern, NULL);
+  if (should_succeed)
+  {
+    assert (compiled != NULL);
+  }
+  else
+  {
+    assert (compiled == NULL);
+  }
+  return compiled;
 }
 
 // Helper function to test a single match case
-static void test_match_case(vibrex_t *pattern, const char* input, bool expected, const char* description) {
-    bool result = vibrex_match(pattern, input);
-    if (result != expected) {
-        printf("FAILED: %s - input '%s', expected %s, got %s\n",
-               description, input, expected ? "true" : "false", result ? "true" : "false");
-        assert(false);
-    }
+static void
+test_match_case (vibrex_t *pattern, const char *input, bool expected, const char *description)
+{
+  bool result = vibrex_match (pattern, input);
+  if (result != expected)
+  {
+    printf ("FAILED: %s - input '%s', expected %s, got %s\n",
+            description, input, expected ? "true" : "false", result ? "true" : "false");
+    assert (false);
+  }
 }
 
 // Helper function to test multiple match cases
-static void test_multiple_matches(vibrex_t *pattern, const char* test_cases[][2], size_t num_cases, const char* description) {
-    for (size_t i = 0; i < num_cases; i++) {
-        bool expected = (strcmp(test_cases[i][1], "true") == 0);
-        test_match_case(pattern, test_cases[i][0], expected, description);
-    }
+static void
+test_multiple_matches (vibrex_t *pattern, const char *test_cases[][2], size_t num_cases, const char *description)
+{
+  for (size_t i = 0; i < num_cases; i++)
+  {
+    bool expected = (strcmp (test_cases[i][1], "true") == 0);
+    test_match_case (pattern, test_cases[i][0], expected, description);
+  }
 }
 
 // Helper function to create a string filled with a repeating character
-static char* create_repeated_string(char c, size_t length) {
-    char* str = malloc(length + 1);
-    assert(str != NULL);
-    memset(str, c, length);
-    str[length] = '\0';
-    return str;
+static char *
+create_repeated_string (char c, size_t length)
+{
+  char *str = malloc (length + 1);
+  assert (str != NULL);
+  memset (str, c, length);
+  str[length] = '\0';
+  return str;
 }
 
 // Helper function to measure execution time and verify performance
-static void test_performance(vibrex_t *pattern, const char* input, bool expected_result, const char* description) {
-    (void)description; // Suppress unused parameter warning
-    clock_t start = clock();
-    bool result = vibrex_match(pattern, input);
-    clock_t end = clock();
-    double time_ms = ((double)(end - start)) / CLOCKS_PER_SEC * 1000.0;
+static void
+test_performance (vibrex_t *pattern, const char *input, bool expected_result, const char *description)
+{
+  (void)description; // Suppress unused parameter warning
+  clock_t start  = clock ();
+  bool result    = vibrex_match (pattern, input);
+  clock_t end    = clock ();
+  double time_ms = ((double)(end - start)) / CLOCKS_PER_SEC * 1000.0;
 
-    assert(result == expected_result);
-    assert(time_ms < MAX_PERFORMANCE_TIME_MS);
+  assert (result == expected_result);
+  assert (time_ms < MAX_PERFORMANCE_TIME_MS);
 }
 
 /********************************************************************************
@@ -79,16 +94,15 @@ test_basic_matching ()
 {
   printf ("Testing basic character matching...\n");
 
-  vibrex_t *pattern = compile_and_verify("hello", true);
+  vibrex_t *pattern = compile_and_verify ("hello", true);
 
-  const char* test_cases[][2] = {
+  const char *test_cases[][2] = {
       {"hello", "true"},
       {"hello world", "true"},
       {"say hello", "true"},
-      {"hi", "false"}
-  };
+      {"hi", "false"}};
 
-  test_multiple_matches(pattern, test_cases, 4, "basic matching");
+  test_multiple_matches (pattern, test_cases, 4, "basic matching");
   vibrex_free (pattern);
   printf (TEST_PASS_SYMBOL " Basic matching tests passed\n");
 }
@@ -99,41 +113,42 @@ test_escape_sequences ()
   printf ("Testing escape sequences...\n");
 
   // Test escaping regex metacharacters
-  const char* escape_cases[][3] = {
-      {"\\.", ".", "true"},      // Escaped dot should match literal dot
-      {"\\.", "x", "false"},     // Escaped dot should not match other chars
-      {"\\*", "*", "true"},      // Escaped star should match literal star
-      {"\\*", "x", "false"},     // Escaped star should not match other chars
-      {"\\+", "+", "true"},      // Escaped plus should match literal plus
-      {"\\?", "?", "true"},      // Escaped question should match literal question
-      {"\\^", "^", "true"},      // Escaped caret should match literal caret
-      {"\\$", "$", "true"},      // Escaped dollar should match literal dollar
-      {"\\|", "|", "true"},      // Escaped pipe should match literal pipe
-      {"\\(", "(", "true"},      // Escaped paren should match literal paren
-      {"\\)", ")", "true"},      // Escaped paren should match literal paren
-      {"\\[", "[", "true"},      // Escaped bracket should match literal bracket
-      {"\\]", "]", "true"},      // Escaped bracket should match literal bracket
-      {"\\\\", "\\", "true"}     // Escaped backslash should match literal backslash
+  const char *escape_cases[][3] = {
+      {"\\.", ".", "true"},  // Escaped dot should match literal dot
+      {"\\.", "x", "false"}, // Escaped dot should not match other chars
+      {"\\*", "*", "true"},  // Escaped star should match literal star
+      {"\\*", "x", "false"}, // Escaped star should not match other chars
+      {"\\+", "+", "true"},  // Escaped plus should match literal plus
+      {"\\?", "?", "true"},  // Escaped question should match literal question
+      {"\\^", "^", "true"},  // Escaped caret should match literal caret
+      {"\\$", "$", "true"},  // Escaped dollar should match literal dollar
+      {"\\|", "|", "true"},  // Escaped pipe should match literal pipe
+      {"\\(", "(", "true"},  // Escaped paren should match literal paren
+      {"\\)", ")", "true"},  // Escaped paren should match literal paren
+      {"\\[", "[", "true"},  // Escaped bracket should match literal bracket
+      {"\\]", "]", "true"},  // Escaped bracket should match literal bracket
+      {"\\\\", "\\", "true"} // Escaped backslash should match literal backslash
   };
 
-  for (size_t i = 0; i < sizeof(escape_cases) / sizeof(escape_cases[0]); i++) {
-    vibrex_t *pattern = compile_and_verify(escape_cases[i][0], true);
-    bool expected = (strcmp(escape_cases[i][2], "true") == 0);
-    test_match_case(pattern, escape_cases[i][1], expected, "escape sequence test");
-    vibrex_free(pattern);
+  for (size_t i = 0; i < sizeof (escape_cases) / sizeof (escape_cases[0]); i++)
+  {
+    vibrex_t *pattern = compile_and_verify (escape_cases[i][0], true);
+    bool expected     = (strcmp (escape_cases[i][2], "true") == 0);
+    test_match_case (pattern, escape_cases[i][1], expected, "escape sequence test");
+    vibrex_free (pattern);
   }
 
   // Test escaping in complex patterns
-  vibrex_t *complex_escape = compile_and_verify("a\\.b\\*c\\+d", true);
-  assert(vibrex_match(complex_escape, "a.b*c+d") == true);
-  assert(vibrex_match(complex_escape, "axbxcxd") == false);
-  vibrex_free(complex_escape);
+  vibrex_t *complex_escape = compile_and_verify ("a\\.b\\*c\\+d", true);
+  assert (vibrex_match (complex_escape, "a.b*c+d") == true);
+  assert (vibrex_match (complex_escape, "axbxcxd") == false);
+  vibrex_free (complex_escape);
 
   // Test escape sequences in anchored patterns
-  vibrex_t *anchored_escape = compile_and_verify("^\\$test\\$$", true);
-  assert(vibrex_match(anchored_escape, "$test$") == true);
-  assert(vibrex_match(anchored_escape, "test") == false);
-  vibrex_free(anchored_escape);
+  vibrex_t *anchored_escape = compile_and_verify ("^\\$test\\$$", true);
+  assert (vibrex_match (anchored_escape, "$test$") == true);
+  assert (vibrex_match (anchored_escape, "test") == false);
+  vibrex_free (anchored_escape);
 
   printf (TEST_PASS_SYMBOL " Escape sequence tests passed\n");
 }
@@ -144,31 +159,30 @@ test_dot_matching ()
   printf ("Testing dot (.) matching...\n");
 
   // Test basic dot matching
-  vibrex_t *pattern = compile_and_verify("h.llo", true);
-  const char* basic_cases[][2] = {
+  vibrex_t *pattern            = compile_and_verify ("h.llo", true);
+  const char *basic_cases[][2] = {
       {"hello", "true"},
       {"hallo", "true"},
       {"hxllo", "true"},
       {"h@llo", "true"},
-      {"hllo", "false"}
-  };
-  test_multiple_matches(pattern, basic_cases, 5, "dot matching");
+      {"hllo", "false"}};
+  test_multiple_matches (pattern, basic_cases, 5, "dot matching");
   vibrex_free (pattern);
 
   // Test dot at different positions
-  pattern = compile_and_verify(".ello", true);
+  pattern = compile_and_verify (".ello", true);
   assert (vibrex_match (pattern, "hello") == true);
   assert (vibrex_match (pattern, " ello") == true);
   assert (vibrex_match (pattern, "ello") == false);
   vibrex_free (pattern);
 
-  pattern = compile_and_verify("hell.", true);
+  pattern = compile_and_verify ("hell.", true);
   assert (vibrex_match (pattern, "hello") == true);
   assert (vibrex_match (pattern, "hell!") == true);
   assert (vibrex_match (pattern, "hell") == false);
   vibrex_free (pattern);
 
-  pattern = compile_and_verify("a.+c", true);
+  pattern = compile_and_verify ("a.+c", true);
   assert (vibrex_match (pattern, "axbyc") == true);
   assert (vibrex_match (pattern, "ac") == false);
   vibrex_free (pattern);
@@ -181,27 +195,27 @@ test_star_quantifier ()
 {
   printf ("Testing star (*) quantifier...\n");
 
-  vibrex_t *pattern = compile_and_verify("ab*c", true);
-  const char* star_cases[][2] = {
+  vibrex_t *pattern           = compile_and_verify ("ab*c", true);
+  const char *star_cases[][2] = {
       {"ac", "true"},
       {"abc", "true"},
       {"abbc", "true"},
       {"abbbbbc", "true"},
       {"axc", "false"},
-      {"xacx", "true"}  // matches 'ac'
+      {"xacx", "true"} // matches 'ac'
   };
-  test_multiple_matches(pattern, star_cases, 6, "star quantifier");
+  test_multiple_matches (pattern, star_cases, 6, "star quantifier");
   vibrex_free (pattern);
 
   // Test anchored patterns
-  pattern = compile_and_verify("^a*b", true);
+  pattern = compile_and_verify ("^a*b", true);
   assert (vibrex_match (pattern, "b") == true);
   assert (vibrex_match (pattern, "ab") == true);
   assert (vibrex_match (pattern, "aaab") == true);
   assert (vibrex_match (pattern, "cab") == false);
   vibrex_free (pattern);
 
-  pattern = compile_and_verify("ab*$", true);
+  pattern = compile_and_verify ("ab*$", true);
   assert (vibrex_match (pattern, "a") == true);
   assert (vibrex_match (pattern, "ab") == true);
   assert (vibrex_match (pattern, "abbb") == true);
@@ -209,19 +223,18 @@ test_star_quantifier ()
   vibrex_free (pattern);
 
   // Test multiple star quantifiers
-  pattern = compile_and_verify("a*b*c", true);
-  const char* multi_star_cases[][2] = {
+  pattern                           = compile_and_verify ("a*b*c", true);
+  const char *multi_star_cases[][2] = {
       {"c", "true"},
       {"ac", "true"},
       {"bc", "true"},
       {"abc", "true"},
       {"aaabbc", "true"},
-      {"aabbbc", "true"}
-  };
-  test_multiple_matches(pattern, multi_star_cases, 6, "multiple star quantifiers");
+      {"aabbbc", "true"}};
+  test_multiple_matches (pattern, multi_star_cases, 6, "multiple star quantifiers");
   vibrex_free (pattern);
 
-  pattern = compile_and_verify("a.*b", true);
+  pattern = compile_and_verify ("a.*b", true);
   assert (vibrex_match (pattern, "axbybzc") == true); // Should match "axbyb"
   vibrex_free (pattern);
 
@@ -233,26 +246,25 @@ test_plus_quantifier ()
 {
   printf ("Testing plus (+) quantifier...\n");
 
-  vibrex_t *pattern = compile_and_verify("ab+c", true);
-  const char* plus_cases[][2] = {
+  vibrex_t *pattern           = compile_and_verify ("ab+c", true);
+  const char *plus_cases[][2] = {
       {"abc", "true"},
       {"abbc", "true"},
       {"abbbbbc", "true"},
       {"ac", "false"},
-      {"xabcy", "true"}
-  };
-  test_multiple_matches(pattern, plus_cases, 5, "plus quantifier");
+      {"xabcy", "true"}};
+  test_multiple_matches (pattern, plus_cases, 5, "plus quantifier");
   vibrex_free (pattern);
 
   // Test anchored plus patterns
-  pattern = compile_and_verify("^a+b", true);
+  pattern = compile_and_verify ("^a+b", true);
   assert (vibrex_match (pattern, "ab") == true);
   assert (vibrex_match (pattern, "aaab") == true);
   assert (vibrex_match (pattern, "b") == false);
   assert (vibrex_match (pattern, "cab") == false);
   vibrex_free (pattern);
 
-  pattern = compile_and_verify("ab+$", true);
+  pattern = compile_and_verify ("ab+$", true);
   assert (vibrex_match (pattern, "ab") == true);
   assert (vibrex_match (pattern, "abbb") == true);
   assert (vibrex_match (pattern, "a") == false);
@@ -260,18 +272,17 @@ test_plus_quantifier ()
   vibrex_free (pattern);
 
   // Test multiple plus quantifiers
-  pattern = compile_and_verify("a+b+c", true);
-  const char* multi_plus_cases[][2] = {
+  pattern                           = compile_and_verify ("a+b+c", true);
+  const char *multi_plus_cases[][2] = {
       {"abc", "true"},
       {"aabbc", "true"},
       {"c", "false"},
       {"ac", "false"},
-      {"bc", "false"}
-  };
-  test_multiple_matches(pattern, multi_plus_cases, 5, "multiple plus quantifiers");
+      {"bc", "false"}};
+  test_multiple_matches (pattern, multi_plus_cases, 5, "multiple plus quantifiers");
   vibrex_free (pattern);
 
-  pattern = compile_and_verify("a.+b", true);
+  pattern = compile_and_verify ("a.+b", true);
   assert (vibrex_match (pattern, "axbybzc") == true); // Should match "axbyb"
   assert (vibrex_match (pattern, "ab") == false);
   vibrex_free (pattern);
@@ -285,26 +296,26 @@ test_optional_groups ()
   printf ("Testing optional groups (...)?...\n");
 
   /* Basic optional group */
-  vibrex_t *optional_group = compile_and_verify("a(bc)?d", true);
-  const char* basic_optional_cases[][2] = {
-      {"abcd", "true"},   // with optional part
-      {"ad", "true"},     // without optional part
-      {"abd", "false"},   // partial match
-      {"acd", "false"}    // wrong content
+  vibrex_t *optional_group              = compile_and_verify ("a(bc)?d", true);
+  const char *basic_optional_cases[][2] = {
+      {"abcd", "true"}, // with optional part
+      {"ad", "true"},   // without optional part
+      {"abd", "false"}, // partial match
+      {"acd", "false"}  // wrong content
   };
-  test_multiple_matches(optional_group, basic_optional_cases, 4, "basic optional group");
+  test_multiple_matches (optional_group, basic_optional_cases, 4, "basic optional group");
   vibrex_free (optional_group);
 
   /* Multiple optional groups */
-  vibrex_t *multi_optional = compile_and_verify("(ab)?(cd)?", true);
-  const char* multi_optional_cases[][2] = {
-      {"abcd", "true"},   // both present
-      {"ab", "true"},     // first only
-      {"cd", "true"},     // second only
-      {"", "true"},       // neither present
-      {"ac", "true"}      // matches empty at start
+  vibrex_t *multi_optional              = compile_and_verify ("(ab)?(cd)?", true);
+  const char *multi_optional_cases[][2] = {
+      {"abcd", "true"}, // both present
+      {"ab", "true"},   // first only
+      {"cd", "true"},   // second only
+      {"", "true"},     // neither present
+      {"ac", "true"}    // matches empty at start
   };
-  test_multiple_matches(multi_optional, multi_optional_cases, 5, "multiple optional groups");
+  test_multiple_matches (multi_optional, multi_optional_cases, 5, "multiple optional groups");
   vibrex_free (multi_optional);
 
   /* Multiple optional groups with anchors */
@@ -434,31 +445,31 @@ test_individual_anchors ()
   printf ("Testing individual anchors...\n");
 
   // Test start anchor only
-  vibrex_t *start_only = compile_and_verify("^test", true);
-  assert(vibrex_match(start_only, "test123") == true);
-  assert(vibrex_match(start_only, "123test") == false);
-  assert(vibrex_match(start_only, "test") == true);
-  vibrex_free(start_only);
+  vibrex_t *start_only = compile_and_verify ("^test", true);
+  assert (vibrex_match (start_only, "test123") == true);
+  assert (vibrex_match (start_only, "123test") == false);
+  assert (vibrex_match (start_only, "test") == true);
+  vibrex_free (start_only);
 
   // Test end anchor only
-  vibrex_t *end_only = compile_and_verify("test$", true);
-  assert(vibrex_match(end_only, "123test") == true);
-  assert(vibrex_match(end_only, "test123") == false);
-  assert(vibrex_match(end_only, "test") == true);
-  vibrex_free(end_only);
+  vibrex_t *end_only = compile_and_verify ("test$", true);
+  assert (vibrex_match (end_only, "123test") == true);
+  assert (vibrex_match (end_only, "test123") == false);
+  assert (vibrex_match (end_only, "test") == true);
+  vibrex_free (end_only);
 
   // Test escaped anchors (should not act as anchors)
-  vibrex_t *escaped_start = compile_and_verify("\\^test", true);
-  assert(vibrex_match(escaped_start, "^test") == true);
-  assert(vibrex_match(escaped_start, "test") == false);
-  assert(vibrex_match(escaped_start, "abc^test") == true);
-  vibrex_free(escaped_start);
+  vibrex_t *escaped_start = compile_and_verify ("\\^test", true);
+  assert (vibrex_match (escaped_start, "^test") == true);
+  assert (vibrex_match (escaped_start, "test") == false);
+  assert (vibrex_match (escaped_start, "abc^test") == true);
+  vibrex_free (escaped_start);
 
-  vibrex_t *escaped_end = compile_and_verify("test\\$", true);
-  assert(vibrex_match(escaped_end, "test$") == true);
-  assert(vibrex_match(escaped_end, "test") == false);
-  assert(vibrex_match(escaped_end, "test$abc") == true);
-  vibrex_free(escaped_end);
+  vibrex_t *escaped_end = compile_and_verify ("test\\$", true);
+  assert (vibrex_match (escaped_end, "test$") == true);
+  assert (vibrex_match (escaped_end, "test") == false);
+  assert (vibrex_match (escaped_end, "test$abc") == true);
+  vibrex_free (escaped_end);
 
   printf (TEST_PASS_SYMBOL " Individual anchor tests passed\n");
 }
@@ -641,60 +652,62 @@ test_character_class_edge_cases ()
   printf ("Testing character class edge cases...\n");
 
   // Test single character class
-  vibrex_t *single_char = compile_and_verify("[a]", true);
-  assert(vibrex_match(single_char, "a") == true);
-  assert(vibrex_match(single_char, "b") == false);
-  vibrex_free(single_char);
+  vibrex_t *single_char = compile_and_verify ("[a]", true);
+  assert (vibrex_match (single_char, "a") == true);
+  assert (vibrex_match (single_char, "b") == false);
+  vibrex_free (single_char);
 
   // Test character class with all ASCII printable characters
-  vibrex_t *all_printable = compile_and_verify("[ -~]", true);  // Space to tilde
-  assert(vibrex_match(all_printable, " ") == true);
-  assert(vibrex_match(all_printable, "A") == true);
-  assert(vibrex_match(all_printable, "~") == true);
-  assert(vibrex_match(all_printable, "\x1F") == false);  // Below space
-  assert(vibrex_match(all_printable, "\x7F") == false);  // Above tilde
-  vibrex_free(all_printable);
+  vibrex_t *all_printable = compile_and_verify ("[ -~]", true); // Space to tilde
+  assert (vibrex_match (all_printable, " ") == true);
+  assert (vibrex_match (all_printable, "A") == true);
+  assert (vibrex_match (all_printable, "~") == true);
+  assert (vibrex_match (all_printable, "\x1F") == false); // Below space
+  assert (vibrex_match (all_printable, "\x7F") == false); // Above tilde
+  vibrex_free (all_printable);
 
   // Test boundary conditions in ranges
-  vibrex_t *boundary = compile_and_verify("[0-9A-Za-z]", true);
-  assert(vibrex_match(boundary, "0") == true);
-  assert(vibrex_match(boundary, "9") == true);
-  assert(vibrex_match(boundary, "A") == true);
-  assert(vibrex_match(boundary, "Z") == true);
-  assert(vibrex_match(boundary, "a") == true);
-  assert(vibrex_match(boundary, "z") == true);
-  assert(vibrex_match(boundary, "/") == false);  // Just before '0'
-  assert(vibrex_match(boundary, ":") == false);  // Just after '9'
-  assert(vibrex_match(boundary, "@") == false);  // Just before 'A'
-  assert(vibrex_match(boundary, "[") == false);  // Just after 'Z'
-  assert(vibrex_match(boundary, "`") == false);  // Just before 'a'
-  assert(vibrex_match(boundary, "{") == false);  // Just after 'z'
-  vibrex_free(boundary);
+  vibrex_t *boundary = compile_and_verify ("[0-9A-Za-z]", true);
+  assert (vibrex_match (boundary, "0") == true);
+  assert (vibrex_match (boundary, "9") == true);
+  assert (vibrex_match (boundary, "A") == true);
+  assert (vibrex_match (boundary, "Z") == true);
+  assert (vibrex_match (boundary, "a") == true);
+  assert (vibrex_match (boundary, "z") == true);
+  assert (vibrex_match (boundary, "/") == false); // Just before '0'
+  assert (vibrex_match (boundary, ":") == false); // Just after '9'
+  assert (vibrex_match (boundary, "@") == false); // Just before 'A'
+  assert (vibrex_match (boundary, "[") == false); // Just after 'Z'
+  assert (vibrex_match (boundary, "`") == false); // Just before 'a'
+  assert (vibrex_match (boundary, "{") == false); // Just after 'z'
+  vibrex_free (boundary);
 
   // Test negated character class edge cases
-  vibrex_t *negated_single = compile_and_verify("[^a]", true);
-  assert(vibrex_match(negated_single, "a") == false);
-  assert(vibrex_match(negated_single, "b") == true);
-  assert(vibrex_match(negated_single, "1") == true);     // Digit character
-  assert(vibrex_match(negated_single, "\xFF") == true);  // High bit
-  vibrex_free(negated_single);
+  vibrex_t *negated_single = compile_and_verify ("[^a]", true);
+  assert (vibrex_match (negated_single, "a") == false);
+  assert (vibrex_match (negated_single, "b") == true);
+  assert (vibrex_match (negated_single, "1") == true);    // Digit character
+  assert (vibrex_match (negated_single, "\xFF") == true); // High bit
+  vibrex_free (negated_single);
 
   // Test large character class (stress test)
   char large_class[600];
-  strcpy(large_class, "[");
-  for (int i = 32; i <= 126; i++) {  // All printable ASCII
-    if (i != ']' && i != '\\' && i != '-') {  // Avoid special chars
-      strncat(large_class, (char[]){i, '\0'}, 1);
+  strcpy (large_class, "[");
+  for (int i = 32; i <= 126; i++)
+  { // All printable ASCII
+    if (i != ']' && i != '\\' && i != '-')
+    { // Avoid special chars
+      strncat (large_class, (char[]){i, '\0'}, 1);
     }
   }
-  strcat(large_class, "]");
+  strcat (large_class, "]");
 
-  vibrex_t *large = compile_and_verify(large_class, true);
-  assert(vibrex_match(large, "A") == true);
-  assert(vibrex_match(large, "z") == true);
-  assert(vibrex_match(large, "5") == true);
-  assert(vibrex_match(large, "\x1F") == false);  // Not printable
-  vibrex_free(large);
+  vibrex_t *large = compile_and_verify (large_class, true);
+  assert (vibrex_match (large, "A") == true);
+  assert (vibrex_match (large, "z") == true);
+  assert (vibrex_match (large, "5") == true);
+  assert (vibrex_match (large, "\x1F") == false); // Not printable
+  vibrex_free (large);
 
   printf (TEST_PASS_SYMBOL " Character class edge case tests passed\n");
 }
@@ -705,33 +718,33 @@ test_extended_ascii ()
   printf ("Testing extended ASCII characters...\n");
 
   // Test high-bit characters (avoiding the problematic 0xFF endpoint)
-  vibrex_t *high_bit = compile_and_verify("[\x80-\xFE]", true);
-  assert(vibrex_match(high_bit, "\x80") == true);
-  assert(vibrex_match(high_bit, "\xFE") == true);
-  assert(vibrex_match(high_bit, "\x7F") == false);
-  assert(vibrex_match(high_bit, "\xFF") == false);
-  vibrex_free(high_bit);
+  vibrex_t *high_bit = compile_and_verify ("[\x80-\xFE]", true);
+  assert (vibrex_match (high_bit, "\x80") == true);
+  assert (vibrex_match (high_bit, "\xFE") == true);
+  assert (vibrex_match (high_bit, "\x7F") == false);
+  assert (vibrex_match (high_bit, "\xFF") == false);
+  vibrex_free (high_bit);
 
   // Test specific extended ASCII character
-  vibrex_t *specific_char = compile_and_verify("\xE9", true);  // é character
-  assert(vibrex_match(specific_char, "\xE9") == true);
-  assert(vibrex_match(specific_char, "e") == false);
-  vibrex_free(specific_char);
+  vibrex_t *specific_char = compile_and_verify ("\xE9", true); // é character
+  assert (vibrex_match (specific_char, "\xE9") == true);
+  assert (vibrex_match (specific_char, "e") == false);
+  vibrex_free (specific_char);
 
   // Test extended ASCII in ranges
-  vibrex_t *extended_range = compile_and_verify("[\xC0-\xDF]", true);  // Latin-1 supplement range
-  assert(vibrex_match(extended_range, "\xC0") == true);
-  assert(vibrex_match(extended_range, "\xDF") == true);
-  assert(vibrex_match(extended_range, "\xBF") == false);
-  assert(vibrex_match(extended_range, "\xE0") == false);
-  vibrex_free(extended_range);
+  vibrex_t *extended_range = compile_and_verify ("[\xC0-\xDF]", true); // Latin-1 supplement range
+  assert (vibrex_match (extended_range, "\xC0") == true);
+  assert (vibrex_match (extended_range, "\xDF") == true);
+  assert (vibrex_match (extended_range, "\xBF") == false);
+  assert (vibrex_match (extended_range, "\xE0") == false);
+  vibrex_free (extended_range);
 
   // Test the fixed edge case - ranges ending with 0xFF
-  vibrex_t *max_range = compile_and_verify("[\xF0-\xFF]", true);
-  assert(vibrex_match(max_range, "\xF0") == true);
-  assert(vibrex_match(max_range, "\xFF") == true);
-  assert(vibrex_match(max_range, "\xEF") == false);
-  vibrex_free(max_range);
+  vibrex_t *max_range = compile_and_verify ("[\xF0-\xFF]", true);
+  assert (vibrex_match (max_range, "\xF0") == true);
+  assert (vibrex_match (max_range, "\xFF") == true);
+  assert (vibrex_match (max_range, "\xEF") == false);
+  vibrex_free (max_range);
 
   printf (TEST_PASS_SYMBOL " Extended ASCII tests passed\n");
 }
@@ -793,7 +806,7 @@ test_plain_groups ()
   assert (vibrex_match (group_optional, "") == true);
   assert (vibrex_match (group_optional, "ab") == true);
   assert (vibrex_match (group_optional, "aba") == true); // matches first "ab"
-  assert (vibrex_match (group_optional, "a") == true);    // matches empty at start
+  assert (vibrex_match (group_optional, "a") == true);   // matches empty at start
   vibrex_free (group_optional);
 
   // Unmatched parentheses (should fail)
@@ -808,8 +821,6 @@ test_plain_groups ()
 
   printf (TEST_PASS_SYMBOL " Plain group tests passed\n");
 }
-
-
 
 void
 test_group_alternations ()
@@ -999,13 +1010,13 @@ test_group_alternations ()
   vibrex_t *opt_alt = vibrex_compile ("^x(a|b|c)?y$", NULL);
   assert (opt_alt != NULL);
 
-  assert (vibrex_match (opt_alt, "xy") == true);   // Optional part not present
-  assert (vibrex_match (opt_alt, "xay") == true);  // First alternative
-  assert (vibrex_match (opt_alt, "xby") == true);  // Second alternative
-  assert (vibrex_match (opt_alt, "xcy") == true);  // Third alternative
-  assert (vibrex_match (opt_alt, "xdy") == false); // Invalid content in middle
-  assert (vibrex_match (opt_alt, "xaby") == false);// More than one char from optional group
-  assert (vibrex_match (opt_alt, "y") == false);   // Missing prefix
+  assert (vibrex_match (opt_alt, "xy") == true);    // Optional part not present
+  assert (vibrex_match (opt_alt, "xay") == true);   // First alternative
+  assert (vibrex_match (opt_alt, "xby") == true);   // Second alternative
+  assert (vibrex_match (opt_alt, "xcy") == true);   // Third alternative
+  assert (vibrex_match (opt_alt, "xdy") == false);  // Invalid content in middle
+  assert (vibrex_match (opt_alt, "xaby") == false); // More than one char from optional group
+  assert (vibrex_match (opt_alt, "y") == false);    // Missing prefix
 
   vibrex_free (opt_alt);
 
@@ -1150,7 +1161,7 @@ test_many_alternations_fdsn ()
       "^FDSN:NET_MSEED3__.*_.*_.*/MSEED3$";
 
   const char *error_message = NULL;
-  vibrex_t *pattern = vibrex_compile (fdsn_pattern, &error_message);
+  vibrex_t *pattern         = vibrex_compile (fdsn_pattern, &error_message);
   assert (pattern != NULL);
 
   assert (vibrex_match (pattern, "FDSN:NET_STA_LOC_L_H_N/MSEED") == true);
@@ -1185,14 +1196,14 @@ test_many_alternations_fdsn ()
   assert (vibrex_match (pattern, "FDSN:NET_MSEED3__00_B_H_Z/MSEED") == false);
 
   /* Test patterns that should NOT match */
-  assert (vibrex_match (pattern, "NOTFDSN:XX_STA_LOC_C_H_N/MSEED") == false);  /* Wrong prefix */
-  assert (vibrex_match (pattern, "FDSN:XX_STA_LOC_C_H_N/MSEED4") == false);    /* Wrong suffix */
-  assert (vibrex_match (pattern, "FDSN:XX_STA_LOC_C_H_N/NOTMSEED") == false);  /* Wrong format */
+  assert (vibrex_match (pattern, "NOTFDSN:XX_STA_LOC_C_H_N/MSEED") == false);     /* Wrong prefix */
+  assert (vibrex_match (pattern, "FDSN:XX_STA_LOC_C_H_N/MSEED4") == false);       /* Wrong suffix */
+  assert (vibrex_match (pattern, "FDSN:XX_STA_LOC_C_H_N/NOTMSEED") == false);     /* Wrong format */
   assert (vibrex_match (pattern, "prefix FDSN:XX_STA_LOC_C_H_N/MSEED") == false); /* Not anchored to start */
 
   /* Test edge cases */
-  assert (vibrex_match (pattern, "") == false);                               /* Empty string */
-  assert (vibrex_match (pattern, "FDSN:") == false);                          /* Incomplete */
+  assert (vibrex_match (pattern, "") == false);      /* Empty string */
+  assert (vibrex_match (pattern, "FDSN:") == false); /* Incomplete */
 
   vibrex_free (pattern);
   printf (TEST_PASS_SYMBOL " Many alternations FDSN pattern tests passed\n");
@@ -1211,22 +1222,22 @@ test_catastrophic_backtracking ()
    * but should run efficiently in NFA-based engines like vibrex */
 
   /* 1. Nested quantifiers - the classic evil regex (a+)+ */
-  vibrex_t *nested_plus = compile_and_verify("(a+)+", true);
+  vibrex_t *nested_plus = compile_and_verify ("(a+)+", true);
 
   /* Create a string that would cause catastrophic backtracking: many 'a's followed by 'X' */
-  char *evil_string = create_repeated_string('a', CATASTROPHIC_TEST_STRING_LENGTH);
-  evil_string[CATASTROPHIC_TEST_STRING_LENGTH] = 'X';         /* Non-matching character at end */
+  char *evil_string                                = create_repeated_string ('a', CATASTROPHIC_TEST_STRING_LENGTH);
+  evil_string[CATASTROPHIC_TEST_STRING_LENGTH]     = 'X'; /* Non-matching character at end */
   evil_string[CATASTROPHIC_TEST_STRING_LENGTH + 1] = '\0';
 
-  test_performance(nested_plus, evil_string, true, "nested quantifiers with evil input");
+  test_performance (nested_plus, evil_string, true, "nested quantifiers with evil input");
 
   /* Test with just 'a' characters - should match */
-  char *good_string = create_repeated_string('a', CATASTROPHIC_TEST_STRING_LENGTH);
+  char *good_string = create_repeated_string ('a', CATASTROPHIC_TEST_STRING_LENGTH);
   assert (vibrex_match (nested_plus, good_string) == true);
 
   vibrex_free (nested_plus);
-  free(evil_string);
-  free(good_string);
+  free (evil_string);
+  free (good_string);
 
   /* 2. Nested star quantifiers (a*)* */
   vibrex_t *nested_star = vibrex_compile ("(a*)*", NULL);
@@ -1240,34 +1251,34 @@ test_catastrophic_backtracking ()
   vibrex_free (nested_star);
 
   /* 3. Alternation with overlapping patterns (a|a)* */
-  vibrex_t *overlap_alt = compile_and_verify("(a|a)*", true);
+  vibrex_t *overlap_alt = compile_and_verify ("(a|a)*", true);
 
   /* This pattern has exponential possibilities but NFA handles it efficiently */
-  char *overlap_test = create_repeated_string('a', 50);
-  test_performance(overlap_alt, overlap_test, true, "overlapping alternation");
+  char *overlap_test = create_repeated_string ('a', 50);
+  test_performance (overlap_alt, overlap_test, true, "overlapping alternation");
 
   vibrex_free (overlap_alt);
-  free(overlap_test);
+  free (overlap_test);
 
   /* 4. The classic "evil regex" pattern with end anchor */
-  vibrex_t *evil_anchored = compile_and_verify("^(a+)+$", true);
+  vibrex_t *evil_anchored = compile_and_verify ("^(a+)+$", true);
 
   /* String that matches */
   assert (vibrex_match (evil_anchored, "aaa") == true);
   assert (vibrex_match (evil_anchored, "aaaaaaaaaa") == true);
 
   /* String that doesn't match - this would cause catastrophic backtracking in backtracking engines */
-  char *evil_nomatch = create_repeated_string('a', 29);
-  evil_nomatch[29] = 'X'; /* Non-matching character at end */
-  evil_nomatch[30] = '\0';
+  char *evil_nomatch = create_repeated_string ('a', 29);
+  evil_nomatch[29]   = 'X'; /* Non-matching character at end */
+  evil_nomatch[30]   = '\0';
 
-  test_performance(evil_anchored, evil_nomatch, false, "evil anchored pattern");
+  test_performance (evil_anchored, evil_nomatch, false, "evil anchored pattern");
 
   vibrex_free (evil_anchored);
-  free(evil_nomatch);
+  free (evil_nomatch);
 
   /* 5. Complex nested quantifiers with alternation */
-  vibrex_t *complex_nested = compile_and_verify("(a|b)*aaac", true);
+  vibrex_t *complex_nested = compile_and_verify ("(a|b)*aaac", true);
 
   /* String that matches */
   assert (vibrex_match (complex_nested, "ababaaac") == true);
@@ -1281,19 +1292,19 @@ test_catastrophic_backtracking ()
   }
   complex_nomatch[100] = '\0'; /* No "aaac" suffix */
 
-  test_performance(complex_nested, complex_nomatch, false, "complex nested quantifiers");
+  test_performance (complex_nested, complex_nomatch, false, "complex nested quantifiers");
 
   vibrex_free (complex_nested);
 
   /* 6. Multiple nested quantifiers */
-  vibrex_t *multi_nested = compile_and_verify("(a*)*b+(c+)+", true);
+  vibrex_t *multi_nested = compile_and_verify ("(a*)*b+(c+)+", true);
 
   assert (vibrex_match (multi_nested, "bcc") == true);
   assert (vibrex_match (multi_nested, "aaabbbcccc") == true);
   assert (vibrex_match (multi_nested, "bbbccccc") == true);
 
   /* Test performance with potentially problematic input */
-  test_performance(multi_nested, "aaaaaaaaaaaaaaaaaabbbbbbbbbbcccccccccc", true, "multiple nested quantifiers");
+  test_performance (multi_nested, "aaaaaaaaaaaaaaaaaabbbbbbbbbbcccccccccc", true, "multiple nested quantifiers");
 
   vibrex_free (multi_nested);
 
@@ -1313,9 +1324,9 @@ test_catastrophic_backtracking ()
   vibrex_free (optional_exp);
 
   /* 8. Deeply nested groups with quantifiers */
-  vibrex_t *deep_nested = compile_and_verify("((a+)+)+", true);
+  vibrex_t *deep_nested = compile_and_verify ("((a+)+)+", true);
 
-  test_performance(deep_nested, "aaaaaaaaaaaaaaaa", true, "deeply nested groups");
+  test_performance (deep_nested, "aaaaaaaaaaaaaaaa", true, "deeply nested groups");
 
   vibrex_free (deep_nested);
 
@@ -1347,7 +1358,7 @@ test_malicious_patterns ()
   }
   deep_pattern[MAX_RECURSION_DEPTH_TEST * 2 + 1] = '\0';
 
-  compile_and_verify(deep_pattern, false);
+  compile_and_verify (deep_pattern, false);
 
   free (deep_pattern);
 
@@ -1372,7 +1383,7 @@ test_malicious_patterns ()
   }
   alt_pattern[pos] = '\0';
 
-  compile_and_verify(alt_pattern, false);
+  compile_and_verify (alt_pattern, false);
 
   free (alt_pattern);
 
@@ -1399,7 +1410,7 @@ test_malicious_patterns ()
   }
   cc_pattern[pos] = '\0';
 
-  compile_and_verify(cc_pattern, false);
+  compile_and_verify (cc_pattern, false);
 
   free (cc_pattern);
 
@@ -1427,7 +1438,7 @@ test_malicious_patterns ()
   }
   mixed_pattern[pos] = '\0';
 
-  compile_and_verify(mixed_pattern, false);
+  compile_and_verify (mixed_pattern, false);
 
   free (mixed_pattern);
 
@@ -1450,7 +1461,7 @@ test_malicious_patterns ()
   }
   safe_pattern[SAFE_RECURSION_DEPTH * 2 + 1] = '\0';
 
-  vibrex_t *safe = compile_and_verify(safe_pattern, true);
+  vibrex_t *safe = compile_and_verify (safe_pattern, true);
   assert (vibrex_match (safe, "a") == true);  // Should match correctly
   assert (vibrex_match (safe, "b") == false); // Should not match wrong char
 
@@ -1567,9 +1578,9 @@ test_malicious_patterns ()
   vibrex_t *alt_quantifier = vibrex_compile ("(a|b|c|d|e|f|g|h|i|j)*test", NULL);
   assert (alt_quantifier != NULL);
 
-  assert (vibrex_match (alt_quantifier, "test") == true);      // Matches with zero occurrences from the group.
-  assert (vibrex_match (alt_quantifier, "abcdtest") == true);  // Matches with several occurrences.
-  assert (vibrex_match (alt_quantifier, "jigatest") == true);  // Matches various occurrences.
+  assert (vibrex_match (alt_quantifier, "test") == true);     // Matches with zero occurrences from the group.
+  assert (vibrex_match (alt_quantifier, "abcdtest") == true); // Matches with several occurrences.
+  assert (vibrex_match (alt_quantifier, "jigatest") == true); // Matches various occurrences.
 
   vibrex_free (alt_quantifier);
 
@@ -1684,16 +1695,16 @@ test_empty_and_edge_cases ()
   vibrex_t *empty = vibrex_compile ("", NULL);
   assert (empty != NULL);
   assert (vibrex_match (empty, "") == true);
-  assert (vibrex_match (empty, "a") == true);  // Matches empty at start
+  assert (vibrex_match (empty, "a") == true); // Matches empty at start
   vibrex_free (empty);
 
   // Test very long strings
-  char *long_string = create_repeated_string('x', 10000);
-  vibrex_t *simple = vibrex_compile ("x", NULL);
+  char *long_string = create_repeated_string ('x', 10000);
+  vibrex_t *simple  = vibrex_compile ("x", NULL);
   assert (simple != NULL);
   assert (vibrex_match (simple, long_string) == true);
   vibrex_free (simple);
-  free(long_string);
+  free (long_string);
 
   printf (TEST_PASS_SYMBOL " Empty and edge case tests passed\n");
 }
@@ -1722,7 +1733,8 @@ test_error_handling_and_limits ()
   assert (oversized_pattern != NULL);
 
   // Fill with a simple repeating pattern
-  for (size_t i = 0; i < oversized_length; i++) {
+  for (size_t i = 0; i < oversized_length; i++)
+  {
     oversized_pattern[i] = 'a';
   }
   oversized_pattern[oversized_length] = '\0';
@@ -1739,14 +1751,16 @@ test_error_handling_and_limits ()
   error_message = NULL;
 
   // Create a pattern with more than MAX_ALTERNATIONS (1000) alternations
-  size_t max_alts = 1100;  // Exceed the limit
-  size_t pattern_size = max_alts * 3 + 10;  // Each alt needs "a|" plus extras
+  size_t max_alts         = 1100;              // Exceed the limit
+  size_t pattern_size     = max_alts * 3 + 10; // Each alt needs "a|" plus extras
   char *many_alts_pattern = malloc (pattern_size);
   assert (many_alts_pattern != NULL);
 
   strcpy (many_alts_pattern, "^(");
-  for (size_t i = 0; i < max_alts; i++) {
-    if (i > 0) {
+  for (size_t i = 0; i < max_alts; i++)
+  {
+    if (i > 0)
+    {
       strcat (many_alts_pattern, "|");
     }
     char alt_char = 'a' + (i % 26);
@@ -1766,16 +1780,18 @@ test_error_handling_and_limits ()
   error_message = NULL;
 
   // Create a pattern with extreme nesting that should fail
-  size_t extreme_depth = 2000;  // Well beyond MAX_RECURSION_DEPTH
+  size_t extreme_depth  = 2000; // Well beyond MAX_RECURSION_DEPTH
   char *extreme_pattern = malloc (extreme_depth * 2 + 10);
   assert (extreme_pattern != NULL);
 
   // Build pattern like (((((...((a))...))))
-  for (size_t i = 0; i < extreme_depth; i++) {
+  for (size_t i = 0; i < extreme_depth; i++)
+  {
     extreme_pattern[i] = '(';
   }
   extreme_pattern[extreme_depth] = 'a';
-  for (size_t i = 0; i < extreme_depth; i++) {
+  for (size_t i = 0; i < extreme_depth; i++)
+  {
     extreme_pattern[extreme_depth + 1 + i] = ')';
   }
   extreme_pattern[extreme_depth * 2 + 1] = '\0';
@@ -1791,24 +1807,24 @@ test_error_handling_and_limits ()
   error_message = NULL;
 
   const char *invalid_patterns[] = {
-    "[z-a]",           // Invalid character range
-    "[]",              // Empty character class
-    "[^]",             // Empty negated character class
-    "a**",             // Double quantifier
-    "a++",             // Double quantifier
-    "?a",              // Quantifier at start
-    "*a",              // Quantifier at start
-    "+a",              // Quantifier at start
-    "\\",              // Trailing escape
-    "a\\",             // Trailing escape
-    "(a|b",            // Unfinished group
-    "a(b(c)d",         // Unmatched parentheses
-    "[a-z",            // Unmatched bracket
-    NULL
-  };
+      "[z-a]",   // Invalid character range
+      "[]",      // Empty character class
+      "[^]",     // Empty negated character class
+      "a**",     // Double quantifier
+      "a++",     // Double quantifier
+      "?a",      // Quantifier at start
+      "*a",      // Quantifier at start
+      "+a",      // Quantifier at start
+      "\\",      // Trailing escape
+      "a\\",     // Trailing escape
+      "(a|b",    // Unfinished group
+      "a(b(c)d", // Unmatched parentheses
+      "[a-z",    // Unmatched bracket
+      NULL};
 
-  for (int i = 0; invalid_patterns[i] != NULL; i++) {
-    error_message = NULL;
+  for (int i = 0; invalid_patterns[i] != NULL; i++)
+  {
+    error_message     = NULL;
     vibrex_t *invalid = vibrex_compile (invalid_patterns[i], &error_message);
     assert (invalid == NULL);
     // Should have error message for invalid patterns
@@ -1817,10 +1833,10 @@ test_error_handling_and_limits ()
 
   // Test 6: Successful compilation should clear error message
   printf ("  Testing successful compilation clears error message...\n");
-  error_message = "previous error";  // Set to non-NULL
+  error_message   = "previous error"; // Set to non-NULL
   vibrex_t *valid = vibrex_compile ("test", &error_message);
   assert (valid != NULL);
-  assert (error_message == NULL);  // Should be cleared on success
+  assert (error_message == NULL); // Should be cleared on success
   vibrex_free (valid);
 
   // Test 7: Patterns that stress character class limits
@@ -1830,7 +1846,8 @@ test_error_handling_and_limits ()
   // Test character class with potential infinite loop (the fixed bug)
   vibrex_t *edge_class = vibrex_compile ("[\x00-\xFF]", &error_message);
   // This should either work or fail gracefully (it should work after our fix)
-  if (edge_class) {
+  if (edge_class)
+  {
     assert (vibrex_match (edge_class, "\x00") == true);
     assert (vibrex_match (edge_class, "\xFF") == true);
     vibrex_free (edge_class);
@@ -1838,7 +1855,7 @@ test_error_handling_and_limits ()
 
   // Test 8: Very long input strings with simple patterns
   printf ("  Testing very long input strings...\n");
-  char *very_long_input = create_repeated_string ('x', 100000);
+  char *very_long_input    = create_repeated_string ('x', 100000);
   vibrex_t *simple_pattern = vibrex_compile ("x", NULL);
   assert (simple_pattern != NULL);
 
@@ -1854,14 +1871,15 @@ test_error_handling_and_limits ()
 
   // Test ranges at ASCII boundaries
   vibrex_t *boundary_ranges[] = {
-    vibrex_compile ("[\x00-\x1F]", NULL),    // Control characters
-    vibrex_compile ("[\x20-\x7E]", NULL),    // Printable ASCII
-    vibrex_compile ("[\x7F-\xFF]", NULL),    // Extended ASCII
-    NULL
-  };
+      vibrex_compile ("[\x00-\x1F]", NULL), // Control characters
+      vibrex_compile ("[\x20-\x7E]", NULL), // Printable ASCII
+      vibrex_compile ("[\x7F-\xFF]", NULL), // Extended ASCII
+      NULL};
 
-  for (int i = 0; boundary_ranges[i] != NULL; i++) {
-    if (boundary_ranges[i]) {
+  for (int i = 0; boundary_ranges[i] != NULL; i++)
+  {
+    if (boundary_ranges[i])
+    {
       // Just verify they compile and can match something
       vibrex_match (boundary_ranges[i], "test");
       vibrex_free (boundary_ranges[i]);
@@ -1874,7 +1892,7 @@ test_error_handling_and_limits ()
   vibrex_t *empty_pattern = vibrex_compile ("", NULL);
   assert (empty_pattern != NULL);
   assert (vibrex_match (empty_pattern, "") == true);
-  assert (vibrex_match (empty_pattern, "anything") == true);  // Matches empty at start
+  assert (vibrex_match (empty_pattern, "anything") == true); // Matches empty at start
   vibrex_free (empty_pattern);
 
   printf (TEST_PASS_SYMBOL " Error handling and limits tests passed\n");
@@ -1890,7 +1908,8 @@ test_memory_and_resource_limits ()
 
   // Pattern that would create many DFA states
   vibrex_t *complex_dfa = vibrex_compile ("[a-z]*[0-9]*[A-Z]*", NULL);
-  if (complex_dfa) {
+  if (complex_dfa)
+  {
     // Test with various inputs to exercise DFA state creation
     assert (vibrex_match (complex_dfa, "abc123XYZ") == true);
     assert (vibrex_match (complex_dfa, "xyz999ABC") == true);
@@ -1902,25 +1921,28 @@ test_memory_and_resource_limits ()
   printf ("  Testing multiple character class patterns...\n");
 
   vibrex_t *multi_class = vibrex_compile ("[a-z][0-9][A-Z][!@#$%][a-z][0-9]", NULL);
-  if (multi_class) {
+  if (multi_class)
+  {
     assert (vibrex_match (multi_class, "a1A!b2") == true);
     assert (vibrex_match (multi_class, "z9Z%x0") == true);
     assert (vibrex_match (multi_class, "invalid") == false);
     vibrex_free (multi_class);
   }
 
-    // Test 3: Stress test with alternations close to but under limit
+  // Test 3: Stress test with alternations close to but under limit
   printf ("  Testing near-maximum alternations...\n");
 
   // Create pattern with many alternations but under MAX_ALTERNATIONS
-  size_t safe_alt_count = 50;  // Much smaller for stability
-  size_t pattern_size = safe_alt_count * 10 + 100;  // More generous size estimate
-  char *stress_pattern = malloc (pattern_size);
+  size_t safe_alt_count = 50;                        // Much smaller for stability
+  size_t pattern_size   = safe_alt_count * 10 + 100; // More generous size estimate
+  char *stress_pattern  = malloc (pattern_size);
   assert (stress_pattern != NULL);
 
   strcpy (stress_pattern, "^(");
-  for (size_t i = 0; i < safe_alt_count; i++) {
-    if (i > 0) {
+  for (size_t i = 0; i < safe_alt_count; i++)
+  {
+    if (i > 0)
+    {
       strcat (stress_pattern, "|");
     }
     char temp[10];
@@ -1930,7 +1952,8 @@ test_memory_and_resource_limits ()
   strcat (stress_pattern, ")$");
 
   vibrex_t *stress_alt = vibrex_compile (stress_pattern, NULL);
-  if (stress_alt) {
+  if (stress_alt)
+  {
     assert (vibrex_match (stress_alt, "t0") == true);
     assert (vibrex_match (stress_alt, "t10") == true);
     assert (vibrex_match (stress_alt, "t49") == true);
@@ -1946,7 +1969,8 @@ test_memory_and_resource_limits ()
 
   // Pattern with many optional groups
   vibrex_t *optional_stress = vibrex_compile ("(a)?(b)?(c)?(d)?(e)?(f)?(g)?(h)?", NULL);
-  if (optional_stress) {
+  if (optional_stress)
+  {
     assert (vibrex_match (optional_stress, "") == true);
     assert (vibrex_match (optional_stress, "abcdefgh") == true);
     assert (vibrex_match (optional_stress, "aceg") == true);
@@ -1958,7 +1982,8 @@ test_memory_and_resource_limits ()
   printf ("  Testing repeated quantifier patterns...\n");
 
   vibrex_t *repeat_quant = vibrex_compile ("a+b*c?d+e*f?", NULL);
-  if (repeat_quant) {
+  if (repeat_quant)
+  {
     assert (vibrex_match (repeat_quant, "aaaacddddd") == true);
     assert (vibrex_match (repeat_quant, "abbbbbcdddeeeef") == true);
     assert (vibrex_match (repeat_quant, "adf") == true);

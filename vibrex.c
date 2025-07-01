@@ -88,69 +88,76 @@
 struct vibrex_pattern;
 
 // State types for NFA
-typedef enum {
-    STATE_CHAR = 1,     // Match specific character
-    STATE_ANY,          // Match any character (.)
-    STATE_CLASS,        // Character class [abc]
-    STATE_SPLIT,        // Epsilon split (for *, +, ?, |)
-    STATE_MATCH,        // Accept state
-    STATE_START_ANCHOR, // ^ anchor
-    STATE_END_ANCHOR    // $ anchor
+typedef enum
+{
+  STATE_CHAR = 1,     // Match specific character
+  STATE_ANY,          // Match any character (.)
+  STATE_CLASS,        // Character class [abc]
+  STATE_SPLIT,        // Epsilon split (for *, +, ?, |)
+  STATE_MATCH,        // Accept state
+  STATE_START_ANCHOR, // ^ anchor
+  STATE_END_ANCHOR    // $ anchor
 } StateType;
 
 // NFA State
-typedef struct State {
-    StateType type;
-    union {
-        unsigned char c;                        // Character to match
-        unsigned char cclass[CHAR_CLASS_BYTES]; // Character class bitmap
-    } data;
-    struct State *out;  // Primary transition
-    struct State *out1; // Secondary transition (for SPLIT)
-    int lastlist;       // Used for tracking active states
+typedef struct State
+{
+  StateType type;
+  union
+  {
+    unsigned char c;                        // Character to match
+    unsigned char cclass[CHAR_CLASS_BYTES]; // Character class bitmap
+  } data;
+  struct State *out;  // Primary transition
+  struct State *out1; // Secondary transition (for SPLIT)
+  int lastlist;       // Used for tracking active states
 } State;
 
 // Pointer list for managing dangling arrows during NFA construction
-typedef struct Ptrlist {
-    State **s;
-    struct Ptrlist *next;
+typedef struct Ptrlist
+{
+  State **s;
+  struct Ptrlist *next;
 } Ptrlist;
 
 // Fragment during NFA construction
-typedef struct Frag {
-    State *start;
-    Ptrlist *out; // List of dangling arrows
+typedef struct Frag
+{
+  State *start;
+  Ptrlist *out; // List of dangling arrows
 } Frag;
 
 // Boyer-Moore bad character table for string search optimization
-typedef struct {
-    int skip[TRANSITION_TABLE_SIZE];
-    bool enabled;
+typedef struct
+{
+  int skip[TRANSITION_TABLE_SIZE];
+  bool enabled;
 } BadCharTable;
 
 // Both anchors optimization for patterns like ^prefix.*suffix$
-typedef struct {
-    char *prefix;
-    char *suffix;
-    size_t prefix_len;
-    size_t suffix_len;
-    bool enabled;
+typedef struct
+{
+  char *prefix;
+  char *suffix;
+  size_t prefix_len;
+  size_t suffix_len;
+  bool enabled;
 } BothAnchorsOpt;
 
 // URL pattern optimization for patterns like https?://[char-class]+
 typedef struct
 {
-  bool enabled;               // Whether this optimization is active
+  bool enabled;                  // Whether this optimization is active
   unsigned char char_table[256]; // Lookup table for allowed characters after ://
 } UrlPatternOpt;
 
 // Literal alternation optimization for patterns like cat|dog|bird|fish
 typedef struct
 {
-  bool enabled;              // Whether this optimization is active
-  char **alternatives;       // Array of literal alternatives
-  size_t *alt_lengths;       // Lengths of each alternative
-  size_t alt_count;          // Number of alternatives
+  bool enabled;        // Whether this optimization is active
+  char **alternatives; // Array of literal alternatives
+  size_t *alt_lengths; // Lengths of each alternative
+  size_t alt_count;    // Number of alternatives
 } LiteralAltOpt;
 
 // Pattern types for mixed dotstar optimization
@@ -597,7 +604,8 @@ parseatom (ParseContext *ctx)
         s->data.cclass[byte_idx] |= 1 << (ch % 8);
 
         // Prevent infinite loop when end is 255 (0xFF)
-        if (ch == 255) break;
+        if (ch == 255)
+          break;
       }
     }
 
@@ -1323,7 +1331,7 @@ compile_alternation_to_dfa (struct vibrex_pattern *compiled, const char *pattern
   compiled->dfa.start_state = start_state;
 
   // Security check: Count alternations to prevent DoS
-  int alt_count = 0;
+  int alt_count       = 0;
   const char *count_p = p;
   while ((count_p = strchr (count_p, '|')) != NULL && count_p < p + pat_len)
   {
@@ -1516,10 +1524,10 @@ can_use_both_anchors_opt (const char *pattern)
 static bool
 compile_both_anchors_opt (struct vibrex_pattern *compiled, const char *pattern)
 {
-    if (!can_use_both_anchors_opt (pattern))
+  if (!can_use_both_anchors_opt (pattern))
     return false;
 
-  size_t len = strlen (pattern);
+  size_t len          = strlen (pattern);
   const char *dotstar = strstr (pattern + 1, ".*");
 
   size_t prefix_len = dotstar - (pattern + 1);
@@ -1532,7 +1540,7 @@ compile_both_anchors_opt (struct vibrex_pattern *compiled, const char *pattern)
 
   memcpy (compiled->both_anchors.prefix, pattern + 1, prefix_len);
   compiled->both_anchors.prefix[prefix_len] = '\0';
-  compiled->both_anchors.prefix_len = prefix_len;
+  compiled->both_anchors.prefix_len         = prefix_len;
 
   // Allocate and copy suffix
   compiled->both_anchors.suffix = malloc (suffix_len + 1);
@@ -1544,7 +1552,7 @@ compile_both_anchors_opt (struct vibrex_pattern *compiled, const char *pattern)
 
   memcpy (compiled->both_anchors.suffix, dotstar + 2, suffix_len);
   compiled->both_anchors.suffix[suffix_len] = '\0';
-  compiled->both_anchors.suffix_len = suffix_len;
+  compiled->both_anchors.suffix_len         = suffix_len;
 
   compiled->both_anchors.enabled = true;
   return true;
@@ -1569,7 +1577,8 @@ match_with_both_anchors_opt (const struct vibrex_pattern *pattern, const char *t
 
   // Find the end of the string (starting from after prefix)
   const char *p = text + opt->prefix_len;
-  while (*p) p++;
+  while (*p)
+    p++;
 
   // Check if string is long enough to contain both prefix and suffix
   size_t total_len = p - text;
@@ -1578,7 +1587,7 @@ match_with_both_anchors_opt (const struct vibrex_pattern *pattern, const char *t
 
   // Check if the string ends with our suffix
   const char *suffix_start = p - opt->suffix_len;
-  return (strncmp(suffix_start, opt->suffix, opt->suffix_len) == 0);
+  return (strncmp (suffix_start, opt->suffix, opt->suffix_len) == 0);
 }
 
 // Free both anchors optimization data
@@ -1589,8 +1598,8 @@ free_both_anchors_opt (BothAnchorsOpt *both_anchors)
   {
     free (both_anchors->prefix);
     free (both_anchors->suffix);
-    both_anchors->prefix = NULL;
-    both_anchors->suffix = NULL;
+    both_anchors->prefix  = NULL;
+    both_anchors->suffix  = NULL;
     both_anchors->enabled = false;
   }
 }
@@ -1673,7 +1682,7 @@ compile_url_pattern_opt (struct vibrex_pattern *compiled, const char *pattern)
   while (p < class_end)
   {
     unsigned char start = *p++;
-    unsigned char end = start;
+    unsigned char end   = start;
 
     // Check for range (e.g., a-z)
     if (p < class_end - 1 && *p == '-')
@@ -1688,7 +1697,8 @@ compile_url_pattern_opt (struct vibrex_pattern *compiled, const char *pattern)
     for (unsigned char ch = start; ch <= end; ch++)
     {
       compiled->url_pattern.char_table[ch] = 1;
-      if (ch == 255) break; // Prevent overflow
+      if (ch == 255)
+        break; // Prevent overflow
     }
   }
 
@@ -1703,7 +1713,7 @@ match_with_url_pattern_opt (const struct vibrex_pattern *pattern, const char *te
   if (!pattern->url_pattern.enabled || !text)
     return false;
 
-  const char *p = text;
+  const char *p                   = text;
   const unsigned char *char_table = pattern->url_pattern.char_table;
 
   // Search for "http" in the text
@@ -1764,19 +1774,19 @@ can_use_literal_alt_opt (const char *pattern)
   if (!pattern)
     return false;
 
-  const char *p = pattern;
-  bool has_alternation = false;
-  int paren_depth = 0;
+  const char *p           = pattern;
+  bool has_alternation    = false;
+  int paren_depth         = 0;
   bool in_top_level_group = false;
 
   // Check if the pattern is wrapped in a single outer group like (a|b)
-  if (*p == '(' && pattern[strlen(pattern) - 1] == ')')
+  if (*p == '(' && pattern[strlen (pattern) - 1] == ')')
   {
     // Check if this is a complete wrapper - no additional content outside
     const char *check_p = p + 1;
-    int check_depth = 0;
+    int check_depth     = 0;
 
-    while (*check_p && check_p < pattern + strlen(pattern) - 1)
+    while (*check_p && check_p < pattern + strlen (pattern) - 1)
     {
       if (*check_p == '(')
         check_depth++;
@@ -1790,7 +1800,7 @@ can_use_literal_alt_opt (const char *pattern)
     }
 
     // If we reached the end-1 position with balanced parens, it's a wrapper
-    if (check_p == pattern + strlen(pattern) - 1 && check_depth == 0)
+    if (check_p == pattern + strlen (pattern) - 1 && check_depth == 0)
       in_top_level_group = true;
   }
 
@@ -1849,8 +1859,8 @@ static bool
 parse_literal_alternatives (const char *pattern, char ***alternatives, size_t **alt_lengths, size_t *alt_count)
 {
   // Count how many alternatives we'll have
-  *alt_count = 0;
-  const char *p = pattern;
+  *alt_count      = 0;
+  const char *p   = pattern;
   int paren_depth = 0;
 
   // First pass: count alternatives, accounting for nested groups
@@ -1873,8 +1883,8 @@ parse_literal_alternatives (const char *pattern, char ***alternatives, size_t **
 
   // Allocate arrays with extra space for nested alternatives
   size_t capacity = (*alt_count) * 2; // Allow for expansion
-  *alternatives = malloc (capacity * sizeof (char *));
-  *alt_lengths = malloc (capacity * sizeof (size_t));
+  *alternatives   = malloc (capacity * sizeof (char *));
+  *alt_lengths    = malloc (capacity * sizeof (size_t));
   if (!*alternatives || !*alt_lengths)
   {
     free (*alternatives);
@@ -1883,10 +1893,10 @@ parse_literal_alternatives (const char *pattern, char ***alternatives, size_t **
   }
 
   // Second pass: extract alternatives
-  p = pattern;
+  p                     = pattern;
   const char *alt_start = p;
-  paren_depth = 0;
-  size_t alt_idx = 0;
+  paren_depth           = 0;
+  size_t alt_idx        = 0;
 
   while (*p)
   {
@@ -1903,8 +1913,8 @@ parse_literal_alternatives (const char *pattern, char ***alternatives, size_t **
       if (alt_start[0] == '(' && alt_start[alt_len - 1] == ')')
       {
         // Extract alternatives from inside the group
-        const char *inner = alt_start + 1;
-        const char *inner_end = alt_start + alt_len - 1;
+        const char *inner           = alt_start + 1;
+        const char *inner_end       = alt_start + alt_len - 1;
         const char *inner_alt_start = inner;
 
         while (inner < inner_end)
@@ -1912,13 +1922,13 @@ parse_literal_alternatives (const char *pattern, char ***alternatives, size_t **
           if (*inner == '|')
           {
             // Found inner alternation
-            size_t inner_len = inner - inner_alt_start;
+            size_t inner_len         = inner - inner_alt_start;
             (*alternatives)[alt_idx] = malloc (inner_len + 1);
             if (!(*alternatives)[alt_idx])
               return false;
             memcpy ((*alternatives)[alt_idx], inner_alt_start, inner_len);
             (*alternatives)[alt_idx][inner_len] = '\0';
-            (*alt_lengths)[alt_idx] = inner_len;
+            (*alt_lengths)[alt_idx]             = inner_len;
             alt_idx++;
 
             inner_alt_start = inner + 1;
@@ -1926,13 +1936,13 @@ parse_literal_alternatives (const char *pattern, char ***alternatives, size_t **
           inner++;
         }
         // Add final inner alternative
-        size_t final_inner_len = inner_end - inner_alt_start;
+        size_t final_inner_len   = inner_end - inner_alt_start;
         (*alternatives)[alt_idx] = malloc (final_inner_len + 1);
         if (!(*alternatives)[alt_idx])
           return false;
         memcpy ((*alternatives)[alt_idx], inner_alt_start, final_inner_len);
         (*alternatives)[alt_idx][final_inner_len] = '\0';
-        (*alt_lengths)[alt_idx] = final_inner_len;
+        (*alt_lengths)[alt_idx]                   = final_inner_len;
         alt_idx++;
       }
       else
@@ -1943,7 +1953,7 @@ parse_literal_alternatives (const char *pattern, char ***alternatives, size_t **
           return false;
         memcpy ((*alternatives)[alt_idx], alt_start, alt_len);
         (*alternatives)[alt_idx][alt_len] = '\0';
-        (*alt_lengths)[alt_idx] = alt_len;
+        (*alt_lengths)[alt_idx]           = alt_len;
         alt_idx++;
       }
 
@@ -1957,21 +1967,21 @@ parse_literal_alternatives (const char *pattern, char ***alternatives, size_t **
   if (alt_start[0] == '(' && alt_start[final_len - 1] == ')')
   {
     // Extract alternatives from inside the final group
-    const char *inner = alt_start + 1;
-    const char *inner_end = alt_start + final_len - 1;
+    const char *inner           = alt_start + 1;
+    const char *inner_end       = alt_start + final_len - 1;
     const char *inner_alt_start = inner;
 
     while (inner < inner_end)
     {
       if (*inner == '|')
       {
-        size_t inner_len = inner - inner_alt_start;
+        size_t inner_len         = inner - inner_alt_start;
         (*alternatives)[alt_idx] = malloc (inner_len + 1);
         if (!(*alternatives)[alt_idx])
           return false;
         memcpy ((*alternatives)[alt_idx], inner_alt_start, inner_len);
         (*alternatives)[alt_idx][inner_len] = '\0';
-        (*alt_lengths)[alt_idx] = inner_len;
+        (*alt_lengths)[alt_idx]             = inner_len;
         alt_idx++;
 
         inner_alt_start = inner + 1;
@@ -1979,13 +1989,13 @@ parse_literal_alternatives (const char *pattern, char ***alternatives, size_t **
       inner++;
     }
     // Add final inner alternative
-    size_t final_inner_len = inner_end - inner_alt_start;
+    size_t final_inner_len   = inner_end - inner_alt_start;
     (*alternatives)[alt_idx] = malloc (final_inner_len + 1);
     if (!(*alternatives)[alt_idx])
       return false;
     memcpy ((*alternatives)[alt_idx], inner_alt_start, final_inner_len);
     (*alternatives)[alt_idx][final_inner_len] = '\0';
-    (*alt_lengths)[alt_idx] = final_inner_len;
+    (*alt_lengths)[alt_idx]                   = final_inner_len;
     alt_idx++;
   }
   else
@@ -1996,7 +2006,7 @@ parse_literal_alternatives (const char *pattern, char ***alternatives, size_t **
       return false;
     memcpy ((*alternatives)[alt_idx], alt_start, final_len);
     (*alternatives)[alt_idx][final_len] = '\0';
-    (*alt_lengths)[alt_idx] = final_len;
+    (*alt_lengths)[alt_idx]             = final_len;
     alt_idx++;
   }
 
@@ -2019,9 +2029,9 @@ compile_literal_alt_opt (struct vibrex_pattern *compiled, const char *pattern)
     return false;
 
   compiled->literal_alt.alternatives = alternatives;
-  compiled->literal_alt.alt_lengths = alt_lengths;
-  compiled->literal_alt.alt_count = alt_count;
-  compiled->literal_alt.enabled = true;
+  compiled->literal_alt.alt_lengths  = alt_lengths;
+  compiled->literal_alt.alt_count    = alt_count;
+  compiled->literal_alt.enabled      = true;
 
   return true;
 }
@@ -2061,8 +2071,8 @@ free_literal_alt_opt (LiteralAltOpt *literal_alt)
     }
     free (literal_alt->alt_lengths);
     literal_alt->alternatives = NULL;
-    literal_alt->alt_lengths = NULL;
-    literal_alt->enabled = false;
+    literal_alt->alt_lengths  = NULL;
+    literal_alt->enabled      = false;
   }
 }
 

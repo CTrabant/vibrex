@@ -867,7 +867,7 @@ vibrex_compile (const char *pattern, const char **error_message)
       compiled->has_first_char = true;
       compiled->first_char     = (unsigned char)prefix_buf[0];
 
-      if (!is_start_anchored && prefix_idx >= 3)
+      if (!is_start_anchored && prefix_idx >= 3 && !compiled->anchored_end)
       {
         compiled->literal_prefix = malloc (prefix_idx + 1);
         if (compiled->literal_prefix)
@@ -964,6 +964,8 @@ step (List *clist, unsigned char c, List *nlist)
         addstate_pos (nlist, s->out, -1);
       break;
 
+
+
     default:
       break;
     }
@@ -983,7 +985,7 @@ ismatch (List *l)
 }
 
 static bool
-is_end_match (List *l)
+is_end_match (List *l, bool at_end_of_text)
 {
   for (int i = 0; i < l->n; i++)
   {
@@ -991,7 +993,7 @@ is_end_match (List *l)
     if (s->type == STATE_MATCH)
       return true;
 
-    if (s->type == STATE_END_ANCHOR)
+    if (s->type == STATE_END_ANCHOR && at_end_of_text)
     {
       List temp_list;
       State *temp_states[16];
@@ -1058,11 +1060,29 @@ vibrex_match (const struct vibrex_pattern *pattern, const char *text)
       listid++;
       l1.n = 0;
       addstate_pos (&l1, pattern->start, current_pos - text);
-      if (is_end_match (&l1))
-        return true;
 
       List *clist = &l1, *nlist = &l2, *tmp;
-      for (const char *p = current_pos; p < text_end; ++p)
+
+      // Check for match after initialization
+      if (!pattern->anchored_end && ismatch (clist))
+        return true;
+
+      // Simulate consuming the prefix that Boyer-Moore already matched
+      for (int i = 0; i < pattern->prefix_len; i++)
+      {
+        step (clist, current_pos[i], nlist);
+        tmp   = clist;
+        clist = nlist;
+        nlist = tmp;
+        if (clist->n == 0)
+          break;
+        // Check for match after each character in prefix
+        if (!pattern->anchored_end && ismatch (clist))
+          return true;
+      }
+
+      // Now continue with the rest of the pattern
+      for (const char *p = current_pos + pattern->prefix_len; p < text_end; ++p)
       {
         step (clist, *p, nlist);
         tmp   = clist;
@@ -1070,9 +1090,12 @@ vibrex_match (const struct vibrex_pattern *pattern, const char *text)
         nlist = tmp;
         if (clist->n == 0)
           break;
-        if (is_end_match (clist))
+        // Check for match after each character
+        if (!pattern->anchored_end && ismatch (clist))
           return true;
       }
+      if (is_end_match (clist, true))
+        return true;
       current_pos++;
     }
     return false;
@@ -1100,7 +1123,7 @@ vibrex_match (const struct vibrex_pattern *pattern, const char *text)
         if (!pattern->anchored_end && ismatch (clist))
           return true;
       }
-      if (is_end_match (clist))
+      if (is_end_match (clist, true))
         return true;
       current_pos++;
     }
@@ -1116,7 +1139,7 @@ vibrex_match (const struct vibrex_pattern *pattern, const char *text)
 
     List *clist = &l1, *nlist = &l2, *tmp;
 
-    if (is_end_match (clist))
+    if (is_end_match (clist, i == textlen))
     {
       if (!pattern->anchored_end || i == textlen)
       {
@@ -1139,7 +1162,8 @@ vibrex_match (const struct vibrex_pattern *pattern, const char *text)
       }
     }
 
-    if (is_end_match (clist))
+    // Check for end match only if we've consumed all characters
+    if (is_end_match (clist, true))
     {
       return true;
     }

@@ -98,20 +98,20 @@ Running benchmarks with 1000000 iterations per test.
 ... <snip>
 
 ======================================================
-Benchmark Summary (Total Times for 1000000 iterations per test)
+Benchmark Summary (Total Times for 100000 iterations per test)
 ------------------------------------------------------
 Engine     | Compile Time (s) | Match Time (s)  | Total Time (s)
 -----------|-----------------|-----------------|-----------------
-Vibrex     | 0.000307        | 5.594755        | 5.595062
-PCRE2      | 0.000237        | 7.540149        | 7.540386
-system     | 0.000514        | 33.368911       | 33.369425
+Vibrex     | 0.000226        | 0.527776        | 0.528002
+PCRE2      | 0.000168        | 0.744888        | 0.745056
+system     | 0.000398        | 3.327146        | 3.327544
 
 Relative Performance (higher is better, system = 1.00x)
 ------------------------------------------------------
 Engine     | Compile Speed   | Match Speed     | Overall Speed
 -----------|-----------------|-----------------|-----------------
-Vibrex     | 1.67           x | 5.96           x | 5.96           x
-PCRE2      | 2.17           x | 4.43           x | 4.43           x
+Vibrex     | 1.76           x | 6.30           x | 6.30           x
+PCRE2      | 2.37           x | 4.47           x | 4.47           x
 system     | 1.00           x | 1.00           x | 1.00           x
 ======================================================
 ```

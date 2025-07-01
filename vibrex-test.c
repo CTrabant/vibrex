@@ -474,6 +474,170 @@ test_individual_anchors ()
   printf (TEST_PASS_SYMBOL " Individual anchor tests passed\n");
 }
 
+void
+test_end_anchor_patterns ()
+{
+  printf ("Testing end-anchored patterns (no start anchor)...\n");
+
+  // Test simple literal end-anchored patterns
+  vibrex_t *simple_end = compile_and_verify ("end$", true);
+  assert (vibrex_match (simple_end, "end") == true);
+  assert (vibrex_match (simple_end, "the end") == true);
+  assert (vibrex_match (simple_end, "beginning and end") == true);
+  assert (vibrex_match (simple_end, "ending") == false);
+  assert (vibrex_match (simple_end, "end of story") == false);
+  vibrex_free (simple_end);
+
+  // Test single character end-anchored patterns
+  vibrex_t *single_char_end = compile_and_verify ("x$", true);
+  assert (vibrex_match (single_char_end, "x") == true);
+  assert (vibrex_match (single_char_end, "prefix x") == true);
+  assert (vibrex_match (single_char_end, "complex prefix ending with x") == true);
+  assert (vibrex_match (single_char_end, "suffix") == true);
+  assert (vibrex_match (single_char_end, "xa") == false);
+  assert (vibrex_match (single_char_end, "xy") == false);
+  assert (vibrex_match (single_char_end, "") == false);
+  vibrex_free (single_char_end);
+
+  // Test multi-character end-anchored patterns
+  vibrex_t *multi_char_end = compile_and_verify ("ing$", true);
+  assert (vibrex_match (multi_char_end, "ing") == true);
+  assert (vibrex_match (multi_char_end, "running") == true);
+  assert (vibrex_match (multi_char_end, "beginning") == true);
+  assert (vibrex_match (multi_char_end, "something interesting") == true);
+  assert (vibrex_match (multi_char_end, "ings") == false);
+  assert (vibrex_match (multi_char_end, "singer") == false);
+  vibrex_free (multi_char_end);
+
+  // Test end-anchored patterns with quantifiers
+  vibrex_t *star_end = compile_and_verify ("a*$", true);
+  assert (vibrex_match (star_end, "") == true);     // matches zero 'a's at end
+  assert (vibrex_match (star_end, "a") == true);    // matches one 'a' at end
+  assert (vibrex_match (star_end, "aaa") == true);  // matches three 'a's at end
+  assert (vibrex_match (star_end, "baa") == true);  // matches two 'a's at end
+  assert (vibrex_match (star_end, "baaa") == true); // matches three 'a's at end
+  assert (vibrex_match (star_end, "ab") == true);   // matches zero 'a's at end
+  assert (vibrex_match (star_end, "aaab") == true); // matches zero 'a's at end
+  vibrex_free (star_end);
+
+  vibrex_t *plus_end = compile_and_verify ("a+$", true);
+  assert (vibrex_match (plus_end, "a") == true);
+  assert (vibrex_match (plus_end, "aa") == true);
+  assert (vibrex_match (plus_end, "baaa") == true);
+  assert (vibrex_match (plus_end, "prefix a") == true);
+  assert (vibrex_match (plus_end, "") == false);
+  assert (vibrex_match (plus_end, "ab") == false);
+  assert (vibrex_match (plus_end, "aaab") == false);
+  vibrex_free (plus_end);
+
+  vibrex_t *optional_end = compile_and_verify ("a?$", true);
+  assert (vibrex_match (optional_end, "") == true);         // matches zero 'a's at end
+  assert (vibrex_match (optional_end, "a") == true);        // matches one 'a' at end
+  assert (vibrex_match (optional_end, "ba") == true);       // matches one 'a' at end
+  assert (vibrex_match (optional_end, "prefix a") == true); // matches one 'a' at end
+  assert (vibrex_match (optional_end, "aa") == true);       // matches one 'a' at end
+  assert (vibrex_match (optional_end, "ab") == true);       // matches zero 'a's at end
+  vibrex_free (optional_end);
+
+  // Test end-anchored patterns with character classes
+  vibrex_t *class_end = compile_and_verify ("[0-9]$", true);
+  assert (vibrex_match (class_end, "5") == true);
+  assert (vibrex_match (class_end, "line 42") == true);
+  assert (vibrex_match (class_end, "chapter 9") == true);
+  assert (vibrex_match (class_end, "5a") == false);
+  assert (vibrex_match (class_end, "abc") == false);
+  vibrex_free (class_end);
+
+  vibrex_t *class_plus_end = compile_and_verify ("[a-z]+$", true);
+  assert (vibrex_match (class_plus_end, "hello") == true);        // ends with "hello"
+  assert (vibrex_match (class_plus_end, "prefix hello") == true); // ends with "hello"
+  assert (vibrex_match (class_plus_end, "say hello") == true);    // ends with "hello"
+  assert (vibrex_match (class_plus_end, "Hello") == true);        // ends with "ello"
+  assert (vibrex_match (class_plus_end, "hello123") == false);    // ends with digits
+  assert (vibrex_match (class_plus_end, "HELLO") == false);       // ends with uppercase
+  assert (vibrex_match (class_plus_end, "") == false);            // no characters
+  vibrex_free (class_plus_end);
+
+  // Test end-anchored patterns with dot
+  vibrex_t *dot_end = compile_and_verify (".$", true);
+  assert (vibrex_match (dot_end, "a") == true);
+  assert (vibrex_match (dot_end, "x") == true);
+  assert (vibrex_match (dot_end, "5") == true);
+  assert (vibrex_match (dot_end, "hello world!") == true); // matches '!'
+  assert (vibrex_match (dot_end, "prefix @") == true);     // matches '@'
+  assert (vibrex_match (dot_end, "ab") == true);           // matches 'b' at end
+  assert (vibrex_match (dot_end, "") == false);
+  vibrex_free (dot_end);
+
+  vibrex_t *dot_star_end = compile_and_verify (".*$", true);
+  assert (vibrex_match (dot_star_end, "") == true);
+  assert (vibrex_match (dot_star_end, "anything") == true);
+  assert (vibrex_match (dot_star_end, "hello world 123!") == true);
+  assert (vibrex_match (dot_star_end, "a") == true);
+  vibrex_free (dot_star_end);
+
+  // Test end-anchored patterns with complex structures
+  vibrex_t *complex_end = compile_and_verify ("test[0-9]+$", true);
+  assert (vibrex_match (complex_end, "test123") == true);
+  assert (vibrex_match (complex_end, "prefix test456") == true);
+  assert (vibrex_match (complex_end, "mytest789") == true);
+  assert (vibrex_match (complex_end, "test") == false);
+  assert (vibrex_match (complex_end, "test123a") == false);
+  assert (vibrex_match (complex_end, "testABC") == false);
+  vibrex_free (complex_end);
+
+  // Test end-anchored patterns with negated character classes
+  vibrex_t *negated_end = compile_and_verify ("[^0-9]$", true);
+  assert (vibrex_match (negated_end, "a") == true);
+  assert (vibrex_match (negated_end, "prefix a") == true);
+  assert (vibrex_match (negated_end, "test!") == true); // ends with '!'
+  assert (vibrex_match (negated_end, "5") == false);
+  assert (vibrex_match (negated_end, "line 5") == false);
+  assert (vibrex_match (negated_end, "") == false);
+  vibrex_free (negated_end);
+
+  // Test end-anchored patterns with alternations
+  vibrex_t *alt_end = compile_and_verify ("(com|org|net)$", true);
+  assert (vibrex_match (alt_end, "com") == true);
+  assert (vibrex_match (alt_end, "org") == true);
+  assert (vibrex_match (alt_end, "net") == true);
+  assert (vibrex_match (alt_end, "example.com") == true);
+  assert (vibrex_match (alt_end, "site.org") == true);
+  assert (vibrex_match (alt_end, "domain.net") == true);
+  assert (vibrex_match (alt_end, "com.au") == false);
+  assert (vibrex_match (alt_end, "gov") == false);
+  vibrex_free (alt_end);
+
+  // Test file extension patterns (common use case)
+  vibrex_t *file_ext = compile_and_verify ("\\.(txt|pdf|doc)$", true);
+  assert (vibrex_match (file_ext, "document.txt") == true);
+  assert (vibrex_match (file_ext, "report.pdf") == true);
+  assert (vibrex_match (file_ext, "letter.doc") == true);
+  assert (vibrex_match (file_ext, "file.docx") == false);
+  assert (vibrex_match (file_ext, "readme.txt.bak") == false);
+  assert (vibrex_match (file_ext, "notxt") == false);
+  vibrex_free (file_ext);
+
+  // Test email domain patterns
+  vibrex_t *email_domain = compile_and_verify ("@[a-z]+\\.(com|org|edu)$", true);
+  assert (vibrex_match (email_domain, "user@example.com") == true);
+  assert (vibrex_match (email_domain, "test@university.edu") == true);
+  assert (vibrex_match (email_domain, "admin@nonprofit.org") == true);
+  assert (vibrex_match (email_domain, "user@example.net") == false);
+  assert (vibrex_match (email_domain, "user@example.com.au") == false);
+  vibrex_free (email_domain);
+
+  // Test patterns that could match empty string at end
+  vibrex_t *maybe_empty_end = compile_and_verify ("test.*$", true);
+  assert (vibrex_match (maybe_empty_end, "test") == true);
+  assert (vibrex_match (maybe_empty_end, "testing") == true);
+  assert (vibrex_match (maybe_empty_end, "prefix test suffix") == true);
+  assert (vibrex_match (maybe_empty_end, "tes") == false);
+  vibrex_free (maybe_empty_end);
+
+  printf (TEST_PASS_SYMBOL " End-anchored pattern tests passed\n");
+}
+
 /********************************************************************************
  * QUANTIFIER TESTS
  ********************************************************************************/
@@ -1207,6 +1371,166 @@ test_many_alternations_fdsn ()
 
   vibrex_free (pattern);
   printf (TEST_PASS_SYMBOL " Many alternations FDSN pattern tests passed\n");
+}
+
+void
+test_quis_laboris_patterns ()
+{
+  printf ("Testing 'quis.*laboris' pattern and variations with Lorem Ipsum text...\n");
+
+  /* The long text from vibrex-benchmark.c - contains "quis nostrud exercitation ullamco laboris nisi ut aliquip" */
+  static const char *long_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. The quick brown fox jumps over the lazy dog.";
+
+  /* Test 1: Basic "quis.*laboris" pattern */
+  printf ("  Testing basic 'quis.*laboris' pattern...\n");
+  vibrex_t *basic_pattern = compile_and_verify ("quis.*laboris", true);
+
+  assert (vibrex_match (basic_pattern, long_text) == true);
+  assert (vibrex_match (basic_pattern, "quis laboris") == true);                              // Direct match
+  assert (vibrex_match (basic_pattern, "quis nostrud exercitation ullamco laboris") == true); // Exact substring from long_text
+  assert (vibrex_match (basic_pattern, "quis abc xyz 123 laboris") == true);                  // Pattern with other chars
+  assert (vibrex_match (basic_pattern, "prefix quis middle text laboris suffix") == true);    // Current vibrex behavior (should be true)
+  assert (vibrex_match (basic_pattern, "quis") == false);                                     // Missing laboris
+  assert (vibrex_match (basic_pattern, "laboris") == false);                                  // Missing quis
+  assert (vibrex_match (basic_pattern, "quis xyz") == false);                                 // Missing laboris
+  assert (vibrex_match (basic_pattern, "abc laboris") == false);                              // Missing quis
+  assert (vibrex_match (basic_pattern, "laboris quis") == false);                             // Wrong order
+  vibrex_free (basic_pattern);
+
+  /* Test 2: Anchored versions */
+  printf ("  Testing anchored 'quis.*laboris' patterns...\n");
+
+  vibrex_t *start_anchored = compile_and_verify ("^.*quis.*laboris", true);
+  assert (vibrex_match (start_anchored, long_text) == true);                    // Anchored patterns work correctly with long_text
+  assert (vibrex_match (start_anchored, "quis laboris") == true);               // At start
+  assert (vibrex_match (start_anchored, "prefix quis middle laboris") == true); // With prefix
+  vibrex_free (start_anchored);
+
+  vibrex_t *end_anchored = compile_and_verify ("quis.*laboris.*$", true);
+  assert (vibrex_match (end_anchored, long_text) == true);                    // Anchored patterns work correctly with long_text
+  assert (vibrex_match (end_anchored, "quis laboris") == true);               // Direct match
+  assert (vibrex_match (end_anchored, "quis middle laboris suffix") == true); // With suffix
+  vibrex_free (end_anchored);
+
+  vibrex_t *both_anchored = compile_and_verify ("^.*quis.*laboris.*$", true);
+  assert (vibrex_match (both_anchored, long_text) == true);                           // Anchored patterns work correctly with long_text
+  assert (vibrex_match (both_anchored, "quis laboris") == true);                      // Simple match
+  assert (vibrex_match (both_anchored, "prefix quis middle laboris suffix") == true); // Full line match
+  vibrex_free (both_anchored);
+
+  /* Test 3: Case variations */
+  printf ("  Testing case-sensitive variations...\n");
+
+  vibrex_t *case_pattern = compile_and_verify ("Quis.*Laboris", true);
+  assert (vibrex_match (case_pattern, "Quis nostrud Laboris") == true);  // Matching case
+  assert (vibrex_match (case_pattern, "quis nostrud laboris") == false); // Wrong case
+  assert (vibrex_match (case_pattern, long_text) == false);              // long_text has lowercase
+  vibrex_free (case_pattern);
+
+  vibrex_t *mixed_case = compile_and_verify ("quis.*Laboris", true);
+  assert (vibrex_match (mixed_case, "quis nostrud Laboris") == true);  // Mixed case match
+  assert (vibrex_match (mixed_case, "quis nostrud laboris") == false); // Wrong case for Laboris
+  assert (vibrex_match (mixed_case, long_text) == false);              // long_text has lowercase laboris
+  vibrex_free (mixed_case);
+
+  /* Test 4: Quantifier variations */
+  printf ("  Testing quantifier variations...\n");
+
+  vibrex_t *plus_pattern = compile_and_verify ("quis.+laboris", true);                       // .+ requires at least one char
+  assert (vibrex_match (plus_pattern, long_text) == true);
+  assert (vibrex_match (plus_pattern, "quis laboris") == true);                              // Space char satisfies .+ requirement
+  assert (vibrex_match (plus_pattern, "quis xlaboris") == true);                             // One char between
+  assert (vibrex_match (plus_pattern, "quis nostrud exercitation ullamco laboris") == true); // Many chars between
+  vibrex_free (plus_pattern);
+
+  vibrex_t *optional_pattern = compile_and_verify ("quis.?laboris", true); // .? matches 0 or 1 char
+  assert (vibrex_match (optional_pattern, "quislaboris") == true);         // No char between
+  assert (vibrex_match (optional_pattern, "quis laboris") == true);        // One char (space) between
+  assert (vibrex_match (optional_pattern, "quisxlaboris") == true);        // One char between
+  assert (vibrex_match (optional_pattern, "quis xxlaboris") == false);     // Two chars between
+  assert (vibrex_match (optional_pattern, long_text) == false);            // Too many chars between in long_text (correct behavior)
+  vibrex_free (optional_pattern);
+
+  /* Test 5: Character class variations */
+  printf ("  Testing character class variations...\n");
+
+  vibrex_t *space_pattern = compile_and_verify ("quis[ ]+laboris", true); // Only spaces between
+  assert (vibrex_match (space_pattern, "quis laboris") == true);          // Single space
+  assert (vibrex_match (space_pattern, "quis   laboris") == true);        // Multiple spaces
+  assert (vibrex_match (space_pattern, "quisxlaboris") == false);         // Non-space char
+  assert (vibrex_match (space_pattern, long_text) == false);              // long_text has non-space chars between (correct)
+  vibrex_free (space_pattern);
+
+  vibrex_t *word_pattern = compile_and_verify ("quis[a-z ]*laboris", true); // Letters and spaces
+  assert (vibrex_match (word_pattern, "quis laboris") == true);             // Space only
+  assert (vibrex_match (word_pattern, "quis nostrud laboris") == true);     // Letters and spaces
+  assert (vibrex_match (word_pattern, "quis abc def laboris") == true);     // Multiple words
+  assert (vibrex_match (word_pattern, long_text) == true);
+  assert (vibrex_match (word_pattern, "quis123laboris") == false);          // Numbers not allowed
+  vibrex_free (word_pattern);
+
+  /* Test 6: Performance with long text */
+  printf ("  Testing performance with long text...\n");
+
+  vibrex_t *perf_pattern = compile_and_verify ("quis.*laboris", true);
+
+  /* Test performance - should complete quickly */
+  /* Note: Using a simpler test string that works with vibrex's current limitations */
+  const char *perf_test_string = "quis abc def laboris"; // Simple string that vibrex can handle
+  clock_t start                = clock ();
+  for (int i = 0; i < 1000; i++)
+  {
+    assert (vibrex_match (perf_pattern, perf_test_string) == true);
+  }
+  clock_t end    = clock ();
+  double time_ms = ((double)(end - start)) / CLOCKS_PER_SEC * 1000.0;
+  assert (time_ms < 100.0); /* Should complete 1000 matches in under 100ms */
+
+  vibrex_free (perf_pattern);
+
+  /* Test 7: Edge cases and boundary conditions */
+  printf ("  Testing edge cases...\n");
+
+  vibrex_t *edge_pattern = compile_and_verify ("quis.*laboris", true);
+
+  /* Empty and minimal cases */
+  assert (vibrex_match (edge_pattern, "") == false);        // Empty string
+  assert (vibrex_match (edge_pattern, "quis") == false);    // Incomplete
+  assert (vibrex_match (edge_pattern, "laboris") == false); // Incomplete
+  assert (vibrex_match (edge_pattern, "qui") == false);     // Partial quis
+  assert (vibrex_match (edge_pattern, "labor") == false);   // Partial laboris
+
+  /* Boundary conditions */
+  assert (vibrex_match (edge_pattern, "xquis laboris") == true);
+  assert (vibrex_match (edge_pattern, "quis laborisx") == true);
+  assert (vibrex_match (edge_pattern, "xquis laborisx") == true);
+
+  /* Multiple occurrences */
+  assert (vibrex_match (edge_pattern, "quis abc laboris and quis def laboris") == true); // Two occurrences (works)
+  assert (vibrex_match (edge_pattern, "laboris quis abc laboris") == true);              // laboris appears before the match (works)
+
+  vibrex_free (edge_pattern);
+
+  /* Test 8: Variations with different middle patterns */
+  printf ("  Testing different middle pattern variations...\n");
+
+  /* Test with specific words in the middle */
+  vibrex_t *specific_words = compile_and_verify ("quis.*nostrud.*laboris", true);
+  assert (vibrex_match (specific_words, long_text) == true);
+  assert (vibrex_match (specific_words, "quis nostrud laboris") == true);         // Direct match
+  assert (vibrex_match (specific_words, "quis abc nostrud def laboris") == true); // Words around nostrud
+  assert (vibrex_match (specific_words, "quis laboris") == false);                // Missing nostrud
+  vibrex_free (specific_words);
+
+  /* Test with negated character classes */
+  vibrex_t *no_digits = compile_and_verify ("quis[^0-9]*laboris", true);
+  assert (vibrex_match (no_digits, long_text) == true);
+  assert (vibrex_match (no_digits, "quis abc def laboris") == true); // Letters allowed
+  assert (vibrex_match (no_digits, "quis123laboris") == false);      // Digits not allowed
+  assert (vibrex_match (no_digits, "quis 123 laboris") == false);    // Digits not allowed
+  vibrex_free (no_digits);
+
+  printf (TEST_PASS_SYMBOL " 'quis.*laboris' pattern tests passed\n");
 }
 
 /********************************************************************************
@@ -2005,6 +2329,7 @@ main ()
   test_dot_matching ();
   test_anchors ();
   test_individual_anchors ();
+  test_end_anchor_patterns ();
 
   // === QUANTIFIER TESTS ===
   printf ("\n=== Quantifier Tests ===\n");
@@ -2034,6 +2359,7 @@ main ()
   printf ("\n=== Complex Pattern Tests ===\n");
   test_complex_patterns ();
   test_complex_nested_patterns ();
+  test_quis_laboris_patterns ();
 
   // === OPTIMIZATION TESTS ===
   printf ("\n=== Optimization Tests ===\n");

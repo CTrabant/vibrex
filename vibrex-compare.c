@@ -31,12 +31,12 @@
  * issues with file I/O or memory allocation.
  *********************************************************************************/
 
+#include <ctype.h>
 #include <regex.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "vibrex.h"
 
@@ -95,7 +95,7 @@ main (int argc, char **argv)
 
   if (test_string_file == NULL || regex_list_file == NULL)
   {
-    fprintf (stderr, "Error: test_string_file and regex_list_file are required arguments.\n");
+    fprintf (stderr, "Error: regex_list_file and test_string_file are required arguments.\n");
     fprintf (stderr, "Usage: %s [-v] <regex_list_file> <test_string_file>\n", argv[0]);
     return 1;
   }
@@ -143,31 +143,31 @@ main (int argc, char **argv)
       // Where STATUS is one of: MATCH_TRUE, MATCH_FALSE, MATCH_UNSET
       // And PATTERN is a regular expression.
       // Trim whitespace from the beginning and end of the pattern.
-      char *pattern = strchr(line_buffer, ' ');
+      char *pattern = strchr (line_buffer, ' ');
       if (pattern == NULL)
       {
-          fprintf(stderr, "Invalid line format: %s\n", line_buffer);
-          return 1;
+        fprintf (stderr, "Invalid line format: %s\n", line_buffer);
+        return 1;
       }
-      *pattern = '\0';
+      *pattern         = '\0';
       char *status_str = line_buffer;
       pattern++;
-      while (isspace((unsigned char)*pattern))
+      while (isspace ((unsigned char)*pattern))
       {
-          pattern++;
+        pattern++;
       }
 
-      char *end = pattern + strlen(pattern) - 1;
-      while (end > pattern && isspace((unsigned char)*end))
+      char *end = pattern + strlen (pattern) - 1;
+      while (end > pattern && isspace ((unsigned char)*end))
       {
-          *end = '\0';
-          end--;
+        *end = '\0';
+        end--;
       }
 
       if (*pattern == '\0')
       {
-          fprintf(stderr, "Invalid line format (empty pattern): %s\n", line_buffer);
-          return 1;
+        fprintf (stderr, "Invalid line format (empty pattern): %s\n", line_buffer);
+        return 1;
       }
 
       tests[num_tests].pattern = strdup (pattern);
@@ -198,10 +198,16 @@ main (int argc, char **argv)
   vibrex_t **vibrexes = malloc (num_tests * sizeof (vibrex_t *));
   for (int i = 0; i < num_tests; i++)
   {
-    vibrexes[i] = vibrex_compile (tests[i].pattern);
+    const char *error_message = NULL;
+    vibrexes[i]               = vibrex_compile (tests[i].pattern, &error_message);
     if (!vibrexes[i])
     {
-      fprintf (stderr, "Could not compile regex: %s\n", tests[i].pattern);
+      fprintf (stderr, "Could not compile regex: %s", tests[i].pattern);
+      if (error_message)
+      {
+        fprintf (stderr, " (%s)", error_message);
+      }
+      fprintf (stderr, "\n");
       return 1;
     }
   }

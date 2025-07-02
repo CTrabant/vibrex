@@ -1,0 +1,49 @@
+Start fresh.
+
+Create an optimized regular expression matching routine in C11.  Use the approach
+of a lazy DFA with fallback to NFA for correctness, as done in RE2/Rust regex engines.
+Then engine must support the following regex special values:
+
+  .      - Any single character
+  *      - Zero or more of the preceding atom
+  +      - One or more of the preceding atom
+  ?      - Zero or one of the preceding atom
+  ^      - Anchor to the start of the string
+  $      - Anchor to the end of the string
+  |      - Alternation (logical OR)
+  ()     - Group syntax, allowing alternation within groups, but without capturing
+  ()?    - Optional groups
+  []     - Character class, including literal [abc], range [a-z], and negated [^abc] support
+  []?    - Optional character class
+
+* Alternations within groups must be supported
+
+* ASCII and extended ASCII characters only, no UTF or other character sets are supported
+
+The engine must be immune to catastrophic backtracking.
+
+The matching routine only needs to return a boolean and should be focussed on
+performance towards that goal.  The matching routine does not need to identify
+which part of the pattern matched or any other matching details.
+
+Performance is critical, aggressively optimize while remaining portable to
+common modern architectures.  For example:
+* optimize for ".*" pattern
+* optimize for no memory allocations for matching
+* optimize for alternations, in particular for patterns like the following but with potentially many more alternations:
+"FDSN:XX_STA_LOC_C_H_N/MSEED3?|FDSN:XX_STA_LOC_C_H_E/MSEED3?|FDSN:XX_STA_LOC_C_H_Z/MSEED3?|FDSN:XY_STA__.*_.*_.*/MSEED3?|FDSN:YY_STA_.*/MSEED3?|FDSN:ZZ_.*_.*_[HBL]_.*_Z/MSEED3?"
+
+Put the implementation in vibrex.c that implements vibrex_compile(),
+vibrex_match(), and vibrex_free() declared in vibrex.h
+
+The implementation must pass the tests defined in vibrex-test.c
+
+##### Followup
+
+Many iterations of: run 'make test' and fix errors
+
+Optimize the regex engine
+
+Optimize for the many alternations case
+
+Suggest DFA optimization approaches

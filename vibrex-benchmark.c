@@ -309,18 +309,18 @@ static const char *long_text = "Lorem ipsum dolor sit amet, consectetur adipisci
 
 /* Special case: many alternations, all start anchored and some containing '.*' */
 static const char *many_alts_pattern =
-    "FDSN:NET_STA_LOC_L_H_N/MSEED3?|"
-    "FDSN:NET_STA_LOC_L_H_E/MSEED3?|"
-    "FDSN:NET_STA_LOC_L_H_Z/MSEED3?|"
-    "FDSN:XY_STA_10_B_H_.*/MSEED3?|"
-    "FDSN:YY_ST1_.*_.*_.*_Z/MSEED3?|"
-    "FDSN:YY_ST2_.*_.*_.*_Z/MSEED3?|"
-    "FDSN:YY_ST3_.*_.*_.*_Z/MSEED3?|"
-    "FDSN:NET_ALL_.*/MSEED3?|"
-    "FDSN:NET_CHAN_00_[HBL]_H_[ENZ]/MSEED3?|"
-    "FDSN:NET_STA1__.*_.*_Z/MSEED3?|"
-    "FDSN:NET_STA2__.*_.*_Z/MSEED3?|"
-    "FDSN:NET_STA3__.*_.*_Z/MSEED3?";
+    "FDSN:NET_STA_LOC_L_H_N/MSEED3?$|"
+    "FDSN:NET_STA_LOC_L_H_E/MSEED3?$|"
+    "FDSN:NET_STA_LOC_L_H_Z/MSEED3?$|"
+    "FDSN:XY_STA_10_B_H_.*/MSEED3?$|"
+    "FDSN:YY_ST1_.*_.*_.*_Z/MSEED3?$|"
+    "FDSN:YY_ST2_.*_.*_.*_Z/MSEED3?$|"
+    "FDSN:YY_ST3_.*_.*_.*_Z/MSEED3?$|"
+    "FDSN:NET_ALL_.*/MSEED3?$|"
+    "FDSN:NET_CHAN_00_[HBL]_H_[ENZ]/MSEED3?$|"
+    "FDSN:NET_STA1__.*_.*_Z/MSEED3?$|"
+    "FDSN:NET_STA2__.*_.*_Z/MSEED3?$|"
+    "FDSN:NET_STA3__.*_.*_Z/MSEED3?$";
 
 static const char *many_alts_text_first   = "FDSN:NET_STA_LOC_L_H_N/MSEED";
 static const char *many_alts_text_last    = "FDSN:NET_STA3__C_H_A/MSEED3";
